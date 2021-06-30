@@ -132,6 +132,6 @@ ax.set_ylabel("MAE")
 ax.grid(linestyle="dashed", color="lightgray", alpha=1.00, zorder=0)
 ax.legend(loc="upper left")
 
-figure_address = "{0}/lr_control_noise_tp.{1}".format(figure_folder, "pdf")
+figure_address = "{0}/turning_points.{1}".format(figure_folder, "pdf")
 fig.savefig(figure_address, bbox_inches="tight", pad_inches=0.05)
 # plt.show()
