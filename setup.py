@@ -11,6 +11,7 @@ setup(
         "statsmodels",
         "matplotlib",
         "tqdm",
+        "more-itertools",
         "tabulate"
     ],
     packages=find_packages()
