@@ -12,7 +12,8 @@ setup(
         "matplotlib",
         "tqdm",
         "more-itertools",
-        "tabulate"
+        "tabulate",
+        "filterpy"
     ],
     packages=find_packages()
 )
