@@ -113,10 +113,19 @@ class SLWE_P:
 		self.eta = (self.rho[-1][token] * bound_diff) + self.eta_min
 		self.eta_history.append(self.eta)
 
+	# linear mapping from rho to eta, but min(rho) is E[rho] of white noise
+	def rho_to_eta_linear_exp(self, token):
+		rho_min = (np.power(self.k, 1/self.alphabet_cardinality) - 1) / (self.k - 1)
+		eta_bound_diff = self.eta_max - self.eta_min
+		rho_bound_diff = 1 - rho_min
+		self.eta = self.eta_min + (((self.rho[-1][token] - rho_min) * eta_bound_diff) / rho_bound_diff)
+		self.eta_history.append(self.eta)
+
 	# processes a given token
 	def process_token(self, token):
 		self.calculate_rho(token)
 		self.rho_to_eta_linear(token)
+		# self.rho_to_eta_linear_exp(token)
 		self.LRI_update(token)
 
 	# processes each token in a given sequence, shows progress information
