@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from tqdm import tqdm
 
-from persistence.tools import MovingStatistics
+from pbnm.tools import MovingStatistics
 
 # build paths
 root_folder = os.path.abspath(os.curdir)

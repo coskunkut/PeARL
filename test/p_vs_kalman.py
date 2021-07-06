@@ -1,8 +1,8 @@
 import numpy as np
 
-from persistence.generator import Multinomial
-from persistence.estimator import SLWE, SLWE_P
-from persistence.tools import plot_tools
+from pbnm.generator import Multinomial
+from pbnm.estimator import SLWE, SLWE_P
+from pbnm.tools import plot_tools
 
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise

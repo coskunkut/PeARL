@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="persistence",
+    name="pbnm",
     version="1.0",
     install_requires=[
         "numpy",

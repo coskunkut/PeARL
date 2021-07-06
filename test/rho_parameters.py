@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 
-from persistence.tools import plot_tools
+from pbnm.tools import plot_tools
 
 # build paths
 root_folder = os.path.abspath(os.curdir)
