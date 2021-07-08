@@ -1,0 +1,39 @@
+{
+    "sequence_info": {
+        "drift_type": {
+            "sudden": {
+                "frequency": [
+                    { "n": 5, "d": 600 }
+                ],
+                "severity": [
+                    { "min": 0.4, "max": 1 }
+                ]
+            }
+        },
+        "alphabet_cardinality": [4],
+        "noise_rate": [0, 0.1, 0.2, 0.3, 0.4]
+    },
+    "algorithms_to_run": [
+        "slwe_e",
+        "slwe_t",
+        "slwe_p"
+    ],
+    "parameters": {
+        "experiment": {
+            "number_of_runs": 10
+        },
+        "slwe_e": {
+            "lambda": [0.90]
+        },
+        "slwe_t": {
+            "lambda": [0.99]
+        },
+        "slwe_p": {
+            "eta": [
+                { "min": 0.01, "max": 0.1 }
+            ],
+            "k": [15],
+            "L": [15]
+        }
+    }
+}
