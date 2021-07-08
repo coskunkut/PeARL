@@ -11,7 +11,7 @@
             }
         },
         "alphabet_cardinality": [4],
-        "noise_rate": [0, 0.1, 0.2, 0.3, 0.4]
+        "noise_rate": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     },
     "algorithms_to_run": [
         "slwe_e",
@@ -20,7 +20,7 @@
     ],
     "parameters": {
         "experiment": {
-            "number_of_runs": 10
+            "number_of_runs": 5
         },
         "slwe_e": {
             "lambda": [0.90]
@@ -32,8 +32,8 @@
             "eta": [
                 { "min": 0.01, "max": 0.1 }
             ],
-            "k": [15],
-            "L": [15]
+            "k": [5, 15, 25, 50],
+            "L": [15, 50, 100]
         }
     }
 }
