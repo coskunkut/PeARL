@@ -13,6 +13,7 @@ setup(
         "tqdm",
         "more-itertools",
         "tabulate",
+        "natsort",
         "filterpy"
     ],
     packages=find_packages()
