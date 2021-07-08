@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from natsort import natsorted
 from tqdm import tqdm
+from cycler import cycler
 
 from pbnm.tools import plot_tools
 
@@ -49,7 +50,7 @@ target_doc_props = {}
 target_doc_props["paper"] = {}
 target_doc_props["paper"]["textwidth"] = "default"
 target_doc_props["paper"]["fr"] = 1
-target_doc_props["paper"]["ar"] = 1.25
+target_doc_props["paper"]["ar"] = 2.25
 target_doc_props["paper"]["tex_config"] = "full"
 
 raw_table =  pd.read_csv(run_logs_path, sep=",", index_col=False)
@@ -68,6 +69,13 @@ slwe_p_L_list = raw_table["slwe_p_L"].unique()
 # print(slwe_p_k_list)
 
 for target_doc in target_doc_props.keys():
+
+	# matplotlib config
+	plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+
+	# different line styles for each curve
+	linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
+	plt.rc("axes", prop_cycle=linestyle_cycler)
 
 	for slwe_p_k in slwe_p_k_list:
 		for slwe_p_L in slwe_p_L_list:
@@ -98,9 +106,18 @@ for target_doc in target_doc_props.keys():
 
 			ax.plot(
 				noise_rate_list,
+				slwe_p_mae_list,
+				label = "SLWE-P",
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1,
+				zorder = 10
+			)
+			ax.plot(
+				noise_rate_list,
 				slwe_e_mae_list,
-				label = "SLWE ({})".format(slwe_e_lambda),
-				# color = "black",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "black",
 				alpha = 0.9,
 				linewidth = 1,
 				zorder = 10
@@ -108,23 +125,16 @@ for target_doc in target_doc_props.keys():
 			ax.plot(
 				noise_rate_list,
 				slwe_t_mae_list,
-				label = "SLWE ({})".format(slwe_t_lambda),
-				# color = "black",
-				alpha = 0.9,
-				linewidth = 1,
-				zorder = 10
-			)
-			ax.plot(
-				noise_rate_list,
-				slwe_p_mae_list,
-				label = "SLWE-P",
-				# color = "black",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
 				alpha = 0.9,
 				linewidth = 1,
 				zorder = 10
 			)
 
 			ax.set_xlabel("Noise Rate ($\omega$)")
+			# ax.set_xlim(0, 1)
+			# ax.set_ylim(0)
 			ax.set_ylabel("MAE")
 			ax.grid(linestyle="dashed", alpha=0.5)
 			ax.legend(loc="upper left")
