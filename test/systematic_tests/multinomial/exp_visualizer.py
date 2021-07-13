@@ -68,86 +68,7 @@ slwe_p_k_list = raw_table["slwe_p_k"].unique()
 slwe_p_L_list = raw_table["slwe_p_L"].unique()
 # print(slwe_p_k_list)
 
-for target_doc in target_doc_props.keys():
-
-	# matplotlib config
-	plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
-
-	# different line styles for each curve
-	linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
-	plt.rc("axes", prop_cycle=linestyle_cycler)
-
-	for slwe_p_k in slwe_p_k_list:
-		for slwe_p_L in slwe_p_L_list:
-
-			filtered_table = grouped_table.query("slwe_p_k=={} and slwe_p_L=={}".format(slwe_p_k, slwe_p_L)).reset_index()
-			# print(filtered_table)
-			noise_rate_list = filtered_table["noise_rate"].unique()
-
-			slwe_e_lambda = filtered_table["slwe_e_lambda"].unique()[0]
-			slwe_e_mae_list = filtered_table["slwe_e_mae"].unique()
-
-			slwe_t_lambda = filtered_table["slwe_t_lambda"].unique()[0]
-			slwe_t_mae_list = filtered_table["slwe_t_mae"].unique()
-
-			slwe_p_mae_list = filtered_table["slwe_p_mae"].unique()
-
-			# generate figure for current experiment (estimates)
-			fig, ax = plt.subplots(
-				nrows = 1,
-				ncols = 1,
-				figsize = plot_tools.set_size(
-					width = target_doc_props[target_doc]["textwidth"],
-					aspect_ratio = target_doc_props[target_doc]["ar"],
-					fraction = target_doc_props[target_doc]["fr"]
-				)
-			)
-			fig.set_tight_layout(True)
-
-			ax.plot(
-				noise_rate_list,
-				slwe_p_mae_list,
-				label = "SLWE-P",
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1,
-				zorder = 10
-			)
-			ax.plot(
-				noise_rate_list,
-				slwe_e_mae_list,
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1,
-				zorder = 10
-			)
-			ax.plot(
-				noise_rate_list,
-				slwe_t_mae_list,
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1,
-				zorder = 10
-			)
-
-			ax.set_xlabel("Noise Rate ($\omega$)")
-			# ax.set_xlim(0, 1)
-			ax.set_ylim(0, 0.4)
-			ax.set_ylabel("MAE")
-			ax.grid(linestyle="dashed", alpha=0.5)
-			ax.legend(loc="upper left")
-
-			fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
-			fig.savefig("{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"), bbox_inches="tight", pad_inches=0.05)
-			plt.close()
-
-			# plt.show()
-
-exit()
-
-total_number_of_figs = len(experiment_files) if exp_list == "all" else (len(exp_list)*len(target_doc_props.keys()))
+total_number_of_figs = len(target_doc_props.keys()) * len(slwe_p_k_list) * len(slwe_p_L_list)
 
 with tqdm(
 	total = total_number_of_figs,
@@ -163,198 +84,76 @@ with tqdm(
 		# matplotlib config
 		plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
 
-		# iterate experiment file list
-		for experiment_file in experiment_files:
+		# different line styles for each curve
+		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
+		plt.rc("axes", prop_cycle=linestyle_cycler)
 
-			# check if experiment file is included in given list
-			if exp_list != "all" and experiment_file not in exp_list:
-				continue
+		for slwe_p_k in slwe_p_k_list:
+			for slwe_p_L in slwe_p_L_list:
 
-			# read experiment file as JSON
-			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
-			with open(experiment_file_path) as current_experiment_file:
-				current_experiment = json.load(current_experiment_file)
+				filtered_table = grouped_table.query("slwe_p_k=={} and slwe_p_L=={}".format(slwe_p_k, slwe_p_L)).reset_index()
+				# print(filtered_table)
+				noise_rate_list = filtered_table["noise_rate"].unique()
 
-			# read necessary info for the figure
-			experiment_name = current_experiment["experiment_info"]["name"]
-			drift_type = current_experiment["sequence_info"]["drift_type"]
+				slwe_e_lambda = filtered_table["slwe_e_lambda"].unique()[0]
+				slwe_e_mae_list = filtered_table["slwe_e_mae"].unique()
 
-			if drift_type == "sudden" or drift_type == "incremental_sin" or drift_type == "incremental_lin":
-				n = current_experiment["sequence_info"]["drift_params"]["n"]
-				d = current_experiment["sequence_info"]["drift_params"]["d"]
-				sequence_length = n * d
-				regime_parameters = current_experiment["sequence_info"]["regime_parameters"]
-				parameter_sequence = np.repeat(np.array(regime_parameters), d)
-			# elif drift_type == "mixed":
-			# 	small_sudden = current_experiment["sequence_info"]["drift_params"]["small_sudden"]
-			# 	incremental_sin = current_experiment["sequence_info"]["drift_params"]["incremental_sin"]
-			# 	large_sudden = current_experiment["sequence_info"]["drift_params"]["large_sudden"]
-			# 	incremental_lin = current_experiment["sequence_info"]["drift_params"]["incremental_lin"]
-			# 	sequence_length = (
-			# 		small_sudden["n"] * small_sudden["d"] + 
-			# 		incremental_sin["n"] * incremental_sin["d"] + 
-			# 		large_sudden["n"] * large_sudden["d"] + 
-			# 		incremental_lin["n"] * incremental_lin["d"]
-			# 	)
-				# regime_parameters = current_experiment["sequence_info"]["regime_parameters"]
+				slwe_t_lambda = filtered_table["slwe_t_lambda"].unique()[0]
+				slwe_t_mae_list = filtered_table["slwe_t_mae"].unique()
 
-			parameter_sequence = current_experiment["sequence_info"]["p_sequence"]
-			sequence_length = len(parameter_sequence)
+				slwe_p_mae_list = filtered_table["slwe_p_mae"].unique()
 
-			slwe_e_estimates = current_experiment["results"]["slwe_e"]["estimates"]
-			slwe_t_estimates = current_experiment["results"]["slwe_t"]["estimates"]
-			slwe_alm_estimates = current_experiment["results"]["slwe_alm"]["estimates"]
-			slwe_alm_learning_rates = current_experiment["results"]["slwe_alm"]["learning_rates"]
-			hy2_estimates = current_experiment["results"]["hy2"]["estimates"]
-			# hddm_w_estimates = current_experiment["results"]["hddm_w"]["estimates"]
-
-			# slwe_alm_change_scores = current_experiment["results"]["slwe_alm"]["change_scores"]
-			# slwe_absolute_error = np.absolute(slwe_estimates - parameter_sequence)
-			# slwe_alm_absolute_error = np.absolute(slwe_alm_estimates - parameter_sequence)
-			# slwe_cumulative_absolute_error = np.cumsum(slwe_absolute_error, axis=0)
-			# slwe_alm_cumulative_absolute_error = np.cumsum(slwe_alm_absolute_error, axis=0)
-
-			# generate figure for current experiment (estimates)
-			fig, ax = plt.subplots(
-				nrows = 2,
-				ncols = 2,
-				figsize = plot_tools.set_size(
-					width = target_doc_props[target_doc]["textwidth"],
-					aspect_ratio = target_doc_props[target_doc]["ar"],
-					fraction = target_doc_props[target_doc]["fr"]
+				# generate figure for current experiment (estimates)
+				fig, ax = plt.subplots(
+					nrows = 1,
+					ncols = 1,
+					figsize = plot_tools.set_size(
+						width = target_doc_props[target_doc]["textwidth"],
+						aspect_ratio = target_doc_props[target_doc]["ar"],
+						fraction = target_doc_props[target_doc]["fr"]
+					)
 				)
-			)
-			fig.set_tight_layout(True)
+				fig.set_tight_layout(True)
 
-			for i in range(2):
-				for j in range(2):
-					k = 2*i+j
-					ax[i][j].plot(
-						[p[k] for p in parameter_sequence],
-						label = "p {}".format(k),
-						color = "black",
-						alpha = 0.9,
-						linewidth = 1,
-						zorder = 10
-					)
-					# ax[i][j].plot(
-					# 	[p[k] for p in slwe_e_estimates],
-					# 	label = "SLWE (E)",
-					# 	alpha = 0.9,
-					# 	linewidth = 1,
-					# 	zorder = 2
-					# )
-					ax[i][j].plot(
-						[p[k] for p in slwe_alm_estimates],
-						label = "SLWE-ALM",
-						alpha = 0.5,
-						linewidth = 1,
-						zorder = 4
-					)
-					ax[i][j].plot(
-						[p[k] for p in hy2_estimates],
-						label = "HY2",
-						alpha = 0.5,
-						linewidth = 1,
-						zorder = 4
-					)
-					# ax[i][j].plot(
-					# 	[p[k] for p in slwe_alm_ins.reg_mean],
-					# 	label = "SLWE-ALM reg_mean",
-					# 	alpha = 0.9,
-					# 	linewidth = 1,
-					# 	zorder = 4
-					# )
-					# ax[i][j].plot(
-					# 	[p[k] for p in slwe_alm_ins.reg_mean_mstd],
-					# 	label = "SLWE-ALM mstd",
-					# 	alpha = 0.9,
-					# 	linewidth = 1,
-					# 	zorder = 4
-					# )
-					ax[i][j].plot(
-						slwe_alm_learning_rates,
-						label = "SLWE-ALM eta",
-						alpha = 0.9,
-						linewidth = 1,
-						zorder = 4
-					)
-					# ax[i][j].set_ylim([0,1])
-					# ax[i][j].legend()
-					# ax[i][j].grid(
-					# 	linestyle = "dashed",
-					# 	color = "lightgray",
-					# 	alpha = 1.00,
-					# 	zorder = 0
-					# )
+				ax.plot(
+					noise_rate_list,
+					slwe_p_mae_list,
+					label = "SLWE-P",
+					color = "black",
+					alpha = 0.9,
+					linewidth = 1,
+					zorder = 10
+				)
+				ax.plot(
+					noise_rate_list,
+					slwe_e_mae_list,
+					label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+					color = "black",
+					alpha = 0.9,
+					linewidth = 1,
+					zorder = 10
+				)
+				ax.plot(
+					noise_rate_list,
+					slwe_t_mae_list,
+					label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+					color = "black",
+					alpha = 0.9,
+					linewidth = 1,
+					zorder = 10
+				)
 
-					# # ax.set_xlabel("Observation Count")
-					ax[i][j].set_xlim([0, sequence_length])
-					if drift_type == "sudden":
-						ax[i][j].set_xticks(np.linspace(0, sequence_length, n + 1))
-					# 	# plt.xticks(rotation=90)
-					# elif drift_type == "incremental_sin":
-					# 	ax.set_xticks(np.linspace(0, sequence_length, 5))
-					# elif drift_type == "incremental_lin":
-					# 	ax.set_xticks(np.linspace(0, sequence_length, 5))
+				ax.set_xlabel("Noise Rate ($\omega$)")
+				# ax.set_xlim(0, 1)
+				ax.set_ylim(0, 0.4)
+				ax.set_ylabel("MAE")
+				ax.grid(linestyle="dashed", alpha=0.5)
+				ax.legend(loc="upper left")
 
-					# # ax.set_ylabel("Probability")
-					ax[i][j].set_ylim([-0.05,1.25])
-					ax[i][j].set_yticks(np.linspace(0, 1, 6))
-					ax[i][j].grid(linestyle="dashed", alpha=0.5)
-					ax[i][j].legend(
-						loc="upper right", 
-						ncol=2,
-						handlelength = 1,
-						mode = "expand",
-						framealpha = 1
-					)
+				fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
+				fig.savefig("{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"), bbox_inches="tight", pad_inches=0.05)
+				plt.close()
 
-			fig.savefig("{}/{}_{}.{}".format(estimate_figures_folder_path, experiment_name, "est", "pdf"), bbox_inches="tight", pad_inches=0.05)
-			plt.close()
+				# plt.show()
 
-			# # generate figure for current experiment (absolute error)
-			# fig, ax = plt.subplots(1, 1, figsize=plot_tools.set_size("thesis", aspect_ratio=2.25, fraction=1))
-			# fig.set_tight_layout(True)
-			# ax.plot(slwe_absolute_error, label="SLWE", color="silver", linewidth=1, zorder=1)
-			# ax.plot(slwe_alm_absolute_error, label="SLWE-ALM", color="navy", linewidth=1, zorder=2)
-			# ax.set_xlabel("Observation Count")
-			# ax.set_xlim([0,np.sum(regime_lengths)])
-			# ax.set_xticks(np.cumsum(regime_lengths))
-			# ax.set_ylabel("Absolute Error")
-			# # ax.set_ylim([0,1])
-			# ax.grid(linestyle="dashed", alpha=0.5)
-			# ax.legend(loc="upper left", ncol=2)
-			# fig.savefig("{}/{}_{}.{}".format(absolute_error_figures_folder_path, experiment_name, "abs_err", "pdf"), bbox_inches="tight", pad_inches=0.05)
-			# plt.close()
-
-			# # generate figure for current experiment (cumulative absolute error)
-			# fig, ax = plt.subplots(1, 1, figsize=plot_tools.set_size("thesis", aspect_ratio=2.25, fraction=1))
-			# fig.set_tight_layout(True)
-			# ax.plot(slwe_cumulative_absolute_error, label="SLWE", color="black", linestyle="solid", linewidth=1, zorder=1)
-			# ax.plot(slwe_alm_cumulative_absolute_error, label="SLWE-ALM", color="black", linestyle="dashed", linewidth=1, zorder=2)
-			# ax.set_xlabel("Observation Count")
-			# ax.set_xlim([0,np.sum(regime_lengths)])
-			# ax.set_xticks(np.cumsum(regime_lengths))
-			# ax.set_ylabel("Cumulative Absolute Error")
-			# # ax.set_ylim([0,1])
-			# ax.grid(linestyle="dashed", alpha=0.5)
-			# ax.legend(loc="upper left", ncol=2)
-			# fig.savefig("{}/{}_{}.{}".format(cumulative_error_figures_folder_path, experiment_name, "cum_abs_err", "pdf"), bbox_inches="tight", pad_inches=0.05)
-			# plt.close()
-
-			# # generate figure for current experiment (change_scores)
-			# fig, ax = plt.subplots(1, 1, figsize=plot_tools.set_size("thesis", aspect_ratio=2.25, fraction=1))
-			# fig.set_tight_layout(True)
-			# ax.plot(slwe_alm_change_scores, label="SLWE-ALM", color="black", linestyle="solid", linewidth=1, zorder=1)
-			# ax.set_xlabel("Observation Count")
-			# ax.set_xlim([0,np.sum(regime_lengths)])
-			# ax.set_xticks(np.cumsum(regime_lengths))
-			# ax.set_ylabel("Change Score")
-			# # ax.set_ylim([0,1])
-			# ax.grid(linestyle="dashed", alpha=0.5)
-			# # ax.legend(loc="upper left", ncol=2)
-			# fig.savefig("{}/{}_{}.{}".format(change_score_figures_folder_path, experiment_name, "ch_scr", "pdf"), bbox_inches="tight", pad_inches=0.05)
-			# plt.close()
-
-			pbar.update()
+				pbar.update()
