@@ -134,7 +134,7 @@ for target_doc in target_doc_props.keys():
 
 			ax.set_xlabel("Noise Rate ($\omega$)")
 			# ax.set_xlim(0, 1)
-			# ax.set_ylim(0)
+			ax.set_ylim(0, 0.4)
 			ax.set_ylabel("MAE")
 			ax.grid(linestyle="dashed", alpha=0.5)
 			ax.legend(loc="upper left")
