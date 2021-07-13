@@ -78,4 +78,4 @@ summary_table = summary_table.transpose().reset_index()
 summary_table.to_csv(path_or_buf=result_table_path, index=False, header=False, sep=",", float_format="%.3f")
 
 # show message
-print("summary   : table generated")
+print("summarize : table generated")

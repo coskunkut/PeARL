@@ -70,7 +70,7 @@ with open(run_logs_path, mode="w") as run_logs_file:
 experiment_file_count = 1
 for experiment_file in tqdm(
 	experiment_files,
-	desc = "analyser".ljust(10),
+	desc = "analyze".ljust(10),
 	bar_format = '{l_bar}{bar:10}{r_bar}{bar:-10b}',
 	ascii = True
 	):

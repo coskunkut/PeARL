@@ -101,7 +101,7 @@ with tqdm(
 	total = total_number_of_runs,
 	position = 0,
 	leave = True,
-	desc = "generator".ljust(10),
+	desc = "generate".ljust(10),
 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
 	ascii = True
 	) as pbar:

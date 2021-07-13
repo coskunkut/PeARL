@@ -74,7 +74,7 @@ with tqdm(
 	total = total_number_of_figs,
 	position = 0,
 	leave = True,
-	desc = "figures".ljust(10),
+	desc = "visualize".ljust(10),
 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
 	ascii = True
 	) as pbar:
@@ -145,6 +145,7 @@ with tqdm(
 
 				ax.set_xlabel("Noise Rate ($\omega$)")
 				# ax.set_xlim(0, 1)
+				ax.set_xticks(np.linspace(0, 1, num=11))
 				ax.set_ylim(0, 0.4)
 				ax.set_ylabel("MAE")
 				ax.grid(linestyle="dashed", alpha=0.5)

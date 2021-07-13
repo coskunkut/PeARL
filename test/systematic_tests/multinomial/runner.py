@@ -88,7 +88,7 @@ pool = mp.Pool()
 r = list(tqdm(
 	pool.imap(run_experiment, experiment_files),
 	total = len(experiment_files),
-	desc = "runner".ljust(10),
+	desc = "run".ljust(10),
 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
 	ascii = True
 ))
