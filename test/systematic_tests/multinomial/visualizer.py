@@ -49,9 +49,9 @@ nr_mae_figures_folder_path = plot_tools.construct_figure_folder_path(figures_fol
 target_doc_props = {}
 target_doc_props["paper"] = {}
 target_doc_props["paper"]["textwidth"] = "default"
-target_doc_props["paper"]["fr"] = 1
-target_doc_props["paper"]["ar"] = 2.25
-target_doc_props["paper"]["tex_config"] = "full"
+target_doc_props["paper"]["fr"] = 0.5
+target_doc_props["paper"]["ar"] = 1.25
+target_doc_props["paper"]["tex_config"] = "half"
 
 raw_table =  pd.read_csv(run_logs_path, sep=",", index_col=False)
 group_by_filter = [
@@ -67,6 +67,10 @@ grouped_table = raw_table.groupby(by=group_by_filter).mean().reset_index()
 slwe_p_k_list = raw_table["slwe_p_k"].unique()
 slwe_p_L_list = raw_table["slwe_p_L"].unique()
 # print(slwe_p_k_list)
+
+drift_type = raw_table["drift_type"].unique()[0]
+drift_params = raw_table["drift_params"].unique()[0].replace("/", "_")
+alp_car = raw_table["alp_car"].unique()[0]
 
 total_number_of_figs = len(target_doc_props.keys()) * len(slwe_p_k_list) * len(slwe_p_L_list)
 
@@ -146,12 +150,14 @@ with tqdm(
 				ax.set_xlabel("Noise Rate ($\omega$)")
 				# ax.set_xlim(0, 1)
 				ax.set_xticks(np.linspace(0, 1, num=11))
-				ax.set_ylim(0, 0.4)
+				# ax.set_ylim(0, 0.4)
+				# ax.set_ylim(0)
 				ax.set_ylabel("MAE")
 				ax.grid(linestyle="dashed", alpha=0.5)
 				ax.legend(loc="upper left")
 
-				fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
+				# fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
+				fig_name = "{}_{}_c{}".format(drift_type, drift_params, alp_car)
 				fig.savefig("{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"), bbox_inches="tight", pad_inches=0.05)
 				plt.close()
 
