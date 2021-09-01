@@ -14,7 +14,8 @@ setup(
         "more-itertools",
         "tabulate",
         "natsort",
-        "filterpy"
+        "filterpy",
+        "bkmeans"
     ],
     packages=find_packages()
 )
