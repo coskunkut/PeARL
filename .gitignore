@@ -402,8 +402,10 @@ dmypy.json
 cython_debug/
 
 # experiment logs
-**/batch_output/**/experiment_files/
-**/batch_output/**/figures/
+**/batch_output/
+# **/batch_output/**/experiment_files/
+# **/batch_output/**/figures/
+test/**/figures/
 
 # config
 .vscode/
