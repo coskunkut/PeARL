@@ -35,6 +35,7 @@ with open(sample_experiment_file_path) as sample_experiment_file:
 # prepare column names of the log file
 fieldnames = [
 		"experiment_type",
+		"sequence_id",
 		"seed",
 		"experiment_name",
 		"alp_car",
@@ -87,6 +88,7 @@ for experiment_file in tqdm(
 	run_result_dict = {}
 	# run_result_dict["experiment_type"] = current_experiment["experiment_info"]["type"]
 	# run_result_dict["seed"] = current_experiment["experiment_info"]["seed"]
+	run_result_dict["sequence_id"] = current_experiment["experiment_info"]["sequence_id"]
 	run_result_dict["experiment_name"] = current_experiment["experiment_info"]["name"]
 	run_result_dict["alp_car"] = alp_car
 	run_result_dict["noise_rate"] = noise_rate
