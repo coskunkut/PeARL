@@ -3,6 +3,14 @@ import glob
 import numpy as np
 from scipy import interpolate
 
+# orders columns of a matrix based on an index mapping
+def align_matrix(matrix, index_mapping):
+	matrix = np.array(matrix)
+	aligned_matrix = np.empty(matrix.shape)
+	for token, index in index_mapping.items():
+		aligned_matrix[:, index] = matrix[:, int(token)]
+	return aligned_matrix
+
 # efficient calculation of moving statistics
 class MovingStatistics(object):
 
