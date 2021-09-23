@@ -1,14 +1,15 @@
 # batch experiment generator
 
+import glob
 import json
 import os
-import glob
 import sys
-import numpy as np
-from tqdm import tqdm
 from datetime import datetime
 
+import numpy as np
 from pbnm.generator import Multinomial
+from tqdm import tqdm
+
 
 def dump_json(current_experiment, experiment_file_path):
 	with open(experiment_file_path, "w") as json_file:
@@ -171,7 +172,7 @@ with tqdm(
 															current_experiment["sequence_info"]["drift_params"]["p_diff_max"] = max_diff
 															current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
 															# current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
-															current_experiment["sequence_info"]["sequence"] = list(map(int, multinomial_ins.sequence))
+															current_experiment["sequence_info"]["sequence"] = list(map(str, multinomial_ins.o_sequence))
 															current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
 															experiment_name = "exp_{}".format(experiment_file_count)
 															current_experiment["experiment_info"]["name"] = experiment_name

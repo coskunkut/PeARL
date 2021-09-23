@@ -1,13 +1,15 @@
 # batch experiment analyser
 
+import csv
 import json
 import os
-import csv
 import sys
+
 import numpy as np
 from natsort import natsorted
-from tqdm import tqdm
+from pbnm.tools import align_matrix
 from sklearn import metrics
+from tqdm import tqdm
 
 # get experiment id
 if len(sys.argv) == 2:
@@ -34,13 +36,13 @@ with open(sample_experiment_file_path) as sample_experiment_file:
 
 # prepare column names of the log file
 fieldnames = [
-		"experiment_type",
-		"seed",
-		"experiment_name",
-		"alp_car",
-		"noise_rate",
-		"drift_type",
-		"drift_params",
+	"experiment_type",
+	"seed",
+	"experiment_name",
+	"alp_car",
+	"noise_rate",
+	"drift_type",
+	"drift_params",
 ]
 if "slwe_e" in algorithms_to_run:
 	fieldnames.extend([
@@ -69,10 +71,10 @@ with open(run_logs_path, mode="w") as run_logs_file:
 # iterate experiment file list
 experiment_file_count = 1
 for experiment_file in tqdm(
-	experiment_files,
-	desc = "analyze".ljust(10),
-	bar_format = '{l_bar}{bar:10}{r_bar}{bar:-10b}',
-	ascii = True
+		experiment_files,
+		desc = "analyze".ljust(10),
+		bar_format = '{l_bar}{bar:10}{r_bar}{bar:-10b}',
+		ascii = True
 	):
 
 	# read experiment file as JSON
@@ -135,7 +137,9 @@ for experiment_file in tqdm(
 	if "slwe_e" in algorithms_to_run:
 		run_result_dict["slwe_e_lambda"] = current_experiment["parameters"]["slwe_e"]["lambda"]
 		slwe_e_estimates = current_experiment["results"]["slwe_e"]["estimates"]
-		slwe_e_mae = metrics.mean_absolute_error(parameter_sequence, slwe_e_estimates)
+		slwe_e_token_index_map = current_experiment["results"]["slwe_e"]["token_index_map"]
+		slwe_e_aligned_p_sequence = align_matrix(parameter_sequence, slwe_e_token_index_map)
+		slwe_e_mae = metrics.mean_absolute_error(slwe_e_aligned_p_sequence, slwe_e_estimates)
 		run_result_dict["slwe_e_mae"] = slwe_e_mae
 		current_experiment["results"]["slwe_e"]["mae"] = slwe_e_mae
 
@@ -143,7 +147,9 @@ for experiment_file in tqdm(
 	if "slwe_t" in algorithms_to_run:
 		run_result_dict["slwe_t_lambda"] = current_experiment["parameters"]["slwe_t"]["lambda"]
 		slwe_t_estimates = current_experiment["results"]["slwe_t"]["estimates"]
-		slwe_t_mae = metrics.mean_absolute_error(parameter_sequence, slwe_t_estimates)
+		slwe_t_token_index_map = current_experiment["results"]["slwe_t"]["token_index_map"]
+		slwe_t_aligned_p_sequence = align_matrix(parameter_sequence, slwe_t_token_index_map)
+		slwe_t_mae = metrics.mean_absolute_error(slwe_t_aligned_p_sequence, slwe_t_estimates)
 		run_result_dict["slwe_t_mae"] = slwe_t_mae
 		current_experiment["results"]["slwe_t"]["mae"] = slwe_t_mae
 
@@ -154,7 +160,9 @@ for experiment_file in tqdm(
 		run_result_dict["slwe_p_k"] = current_experiment["parameters"]["slwe_p"]["k"]
 		run_result_dict["slwe_p_L"] = current_experiment["parameters"]["slwe_p"]["L"]
 		slwe_p_estimates = current_experiment["results"]["slwe_p"]["estimates"]
-		slwe_p_mae = metrics.mean_absolute_error(parameter_sequence, slwe_p_estimates)
+		slwe_p_token_index_map = current_experiment["results"]["slwe_p"]["token_index_map"]
+		slwe_p_aligned_p_sequence = align_matrix(parameter_sequence, slwe_p_token_index_map)
+		slwe_p_mae = metrics.mean_absolute_error(slwe_p_aligned_p_sequence, slwe_p_estimates)
 		run_result_dict["slwe_p_mae"] = slwe_p_mae
 		current_experiment["results"]["slwe_p"]["mae"] = slwe_p_mae
 	

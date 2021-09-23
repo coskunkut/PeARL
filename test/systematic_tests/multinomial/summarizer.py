@@ -1,9 +1,10 @@
 # batch experiment table generator
 
+import csv
 import json
 import os
-import csv
 import sys
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
