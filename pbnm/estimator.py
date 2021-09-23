@@ -8,6 +8,9 @@ class SLWE:
 		# alphabet cardinality must be known to initialize estimate vectors
 		self.alphabet_cardinality = alphabet_cardinality
 
+		# the corresponding index for each token is stored in this dict.
+		self.token_index_map = {}
+
 		# AKA: lambda
 		self.learning_coefficient = learning_coefficient
 
@@ -16,7 +19,7 @@ class SLWE:
 		self.estimates = []
 
 	# SLWE update
-	def LRI_update (self, token):
+	def LRI_update (self, token_index):
 
 		# get the most recent estimate
 		if len(self.estimates) == 0:
@@ -26,17 +29,32 @@ class SLWE:
 
 		# apply rewarding to relevant probability
 		new_estimate = np.copy(most_recent_estimate)
-		new_estimate[token] = most_recent_estimate[token] + ((1 - self.learning_coefficient) * (1 - most_recent_estimate[token]))
+		new_estimate[token_index] = most_recent_estimate[token_index] + ((1 - self.learning_coefficient) * (1 - most_recent_estimate[token_index]))
 
 		# apply penalty to irrelevant probabilities
-		irrelevant_indices = [i for i in np.arange(self.alphabet_cardinality) if i != token]
+		irrelevant_indices = [i for i in np.arange(self.alphabet_cardinality) if i != token_index]
 		new_estimate[irrelevant_indices] *= self.learning_coefficient
 
 		# append the current estimate to estimate history
 		self.estimates.append(new_estimate.tolist())
 
+	# manages token->index mapping
+	# - assigns a new index to given token if it has not been obverved before
+	# - returns index
+	def get_index(self, token):
+		if len(self.token_index_map) == 0:
+			self.token_index_map[token] = 0
+		elif token not in self.token_index_map:
+			if len(self.token_index_map) >= self.alphabet_cardinality:
+				print("Unexpected token observed: {}".format(token))
+				sys.exit()
+			self.token_index_map[token] = max(self.token_index_map.values()) + 1
+		index = self.token_index_map[token]
+		return index
+
 	def process_token(self, token):
-		self.LRI_update(token)
+		index = self.get_index(token)
+		self.LRI_update(index)
 
 	# processes each token in a given sequence, shows progress information
 	def process_sequence(self, sequence, progress=False, progress_desc="", progress_desc_width=8):
@@ -48,10 +66,10 @@ class SLWE:
 					bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
 					ascii = True
 				):
-				self.LRI_update(sequence[token_count])
+				self.process_token(sequence[token_count])
 		else:
 			for token_count in range(sequence_length):
-				self.LRI_update(sequence[token_count])
+				self.process_token(sequence[token_count])
 
 class SLWE_P:
 
