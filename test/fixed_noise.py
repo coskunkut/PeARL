@@ -1,14 +1,13 @@
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from pbnm.estimator import SLWE, SLWE_P
+from pbnm.generator import Multinomial
+from pbnm.tools import align_matrix, plot_tools
 from sklearn import metrics
 from tabulate import tabulate
-
-from pbnm.generator import Multinomial
-from pbnm.estimator import SLWE, SLWE_P
-from pbnm.tools import plot_tools
-
 
 # build paths
 root_folder = os.path.abspath(os.curdir)
@@ -16,37 +15,48 @@ figure_folder = os.path.join(root_folder, "test", "figures")
 
 # generate non-stationary sequence
 multinomial_ins = Multinomial(25)
-multinomial_ins.sudden_drift_diff(4, 2, 500, 0.3, 0.6)
+multinomial_ins.sudden_drift_diff(
+	alp_car = 4,
+	n = 4,
+	d = 500,
+	min_diff = 0.3,
+	max_diff = 0.6
+)
 
 # inject white noise
 # multinomial_ins.inject_white_noise(4, 0.1, start_index=500, stop_index=1000)
 multinomial_ins.inject_white_noise(4, 0.3, start_index=None, stop_index=None)
 
-# debug
-# print(multinomial_ins.noise_flags)
-# print(np.where(np.array(multinomial_ins.noise_flags) > 0))
+sequence = [token for token in multinomial_ins.o_sequence]
+# sequence = [int(token) for token in multinomial_ins.o_sequence]
 
 # run estimators
 print("running estimators...")
 
+# exploratory slwe
 slwe_explore_lambda = 1 - (0.05)
 slwe_explore = SLWE(4, slwe_explore_lambda)
-slwe_explore.process_sequence(multinomial_ins.sequence, progress=True, progress_desc="SLWE (E)")
-slwe_explore_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_explore.estimates)
+slwe_explore.process_sequence(sequence, progress=True, progress_desc="SLWE (E)")
+aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_explore.token_index_map)
+slwe_explore_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_explore.estimates)
 
+# exploitative slwe
 slwe_exploit_lambda = 1 - (0.01)
 slwe_exploit = SLWE(4, slwe_exploit_lambda)
-slwe_exploit.process_sequence(multinomial_ins.sequence, progress=True, progress_desc="SLWE (T)")
-slwe_exploit_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_exploit.estimates)
+slwe_exploit.process_sequence(sequence, progress=True, progress_desc="SLWE (T)")
+aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_exploit.token_index_map)
+slwe_exploit_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_exploit.estimates)
 
 slwe_p = SLWE_P(4)
-slwe_p.process_sequence(multinomial_ins.sequence, progress=True, progress_desc="SLWE-P")
-slwe_p_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_p.estimates)
+slwe_p.process_sequence(sequence, progress=True, progress_desc="SLWE-P")
+aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_p.token_index_map)
+slwe_p_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_p.estimates)
 
 slwe_comp_lambda = 1 - (np.mean(slwe_p.eta_history))
 slwe_comp = SLWE(4, slwe_comp_lambda)
-slwe_comp.process_sequence(multinomial_ins.sequence, progress=True, progress_desc="SLWE (C)")
-slwe_comp_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_comp.estimates)
+slwe_comp.process_sequence(sequence, progress=True, progress_desc="SLWE (C)")
+aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_comp.token_index_map)
+slwe_comp_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_comp.estimates)
 
 print("\nSLWE-P Stats:")
 print(tabulate([
@@ -82,7 +92,7 @@ for i in range(4):
 		zorder = 10
 	)
 	ax.plot(
-		[p[i] for p in slwe_p.estimates],
+		[p[slwe_p.token_index_map[str(i)]] for p in slwe_p.estimates],
 		label = "SLWE-P",
 		alpha = 0.9,
 		linewidth = 0.5,
@@ -95,29 +105,29 @@ for i in range(4):
 		linewidth = 0.5,
 		zorder = 4
 	)
-	# ax.plot(
-	# 	[p[i] for p in slwe_explore.estimates],
-	# 	label = "SLWE ($\eta={:.2f}$)".format(1-slwe_explore_lambda),
-	# 	alpha = 0.9,
-	# 	linewidth = 0.5,
-	# 	zorder = 4
-	# )
-	# ax.plot(
-	# 	[p[i] for p in slwe_exploit.estimates],
-	# 	label = "SLWE ($\eta={:.2f}$)".format(1-slwe_exploit_lambda),
-	# 	alpha = 0.9,
-	# 	linewidth = 0.5,
-	# 	zorder = 4
-	# )
-	# ax.plot(
-	# 	[p[i] for p in slwe_comp.estimates],
-	# 	label = "SLWE ($\eta={:.2f}$)".format(1-slwe_comp_lambda),
-	# 	alpha = 0.9,
-	# 	linewidth = 0.5,
-	# 	zorder = 4
-	# )
+	ax.plot(
+		[p[slwe_explore.token_index_map[str(i)]] for p in slwe_explore.estimates],
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_explore_lambda),
+		alpha = 0.9,
+		linewidth = 0.5,
+		zorder = 4
+	)
+	ax.plot(
+		[p[slwe_exploit.token_index_map[str(i)]] for p in slwe_exploit.estimates],
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_exploit_lambda),
+		alpha = 0.9,
+		linewidth = 0.5,
+		zorder = 4
+	)
+	ax.plot(
+		[p[slwe_comp.token_index_map[str(i)]] for p in slwe_comp.estimates],
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_comp_lambda),
+		alpha = 0.9,
+		linewidth = 0.5,
+		zorder = 4
+	)
 	# ax.fill_between(
-	# 	x = np.arange(0, len(multinomial_ins.sequence)),
+	# 	x = np.arange(0, len(sequence)),
 	# 	y1 = 0,
 	# 	y2 = 1,
 	# 	where = np.array(multinomial_ins.noise_flags) > 0,
@@ -127,7 +137,7 @@ for i in range(4):
 	# 	# step = "pre",
 	# 	# linewidth = 0
 	# )
-	ax.set_xlim([0, len(multinomial_ins.sequence)])
+	ax.set_xlim([0, len(sequence)])
 	ax.set_ylim([0, 1])
 	ax.set_yticks(np.linspace(0, 1, 6))
 	ax.grid(linestyle="dashed", alpha=0.5)
@@ -150,15 +160,15 @@ for i in range(2):
 			linewidth = 0.5,
 			zorder = 10
 		)
-		# ax[i][j].plot(
-		# 	[p[k] for p in slwe_explore.estimates],
-		# 	label = "SLWE (E)",
-		# 	alpha = 0.9,
-		# 	linewidth = 1,
-		# 	zorder = 2
-		# )
 		ax[i][j].plot(
-			[p[k] for p in slwe_p.estimates],
+			[p[slwe_explore.token_index_map[str(k)]] for p in slwe_explore.estimates],
+			label = "SLWE (E)",
+			alpha = 0.9,
+			linewidth = 1,
+			zorder = 2
+		)
+		ax[i][j].plot(
+			[p[slwe_p.token_index_map[str(k)]] for p in slwe_p.estimates],
 			label = "SLWE-P",
 			alpha = 0.5,
 			linewidth = 0.5,
