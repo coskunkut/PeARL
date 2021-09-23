@@ -1,13 +1,13 @@
 # persistence of white noise
 
-import sys
 import os
-import numpy as np
-import matplotlib.pyplot as plt
+import sys
 from collections import Counter
-from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+import numpy as np
 from pbnm.tools import MovingStatistics
+from tqdm import tqdm
 
 # build paths
 root_folder = os.path.abspath(os.curdir)

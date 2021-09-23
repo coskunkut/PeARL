@@ -1,15 +1,14 @@
-import sys
 import os
-import numpy as np
+import sys
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from sklearn import metrics
-
-from pbnm.generator import Multinomial
 from pbnm.estimator import SLWE, SLWE_P
-from pbnm.tools import plot_tools
-
+from pbnm.generator import Multinomial
+from pbnm.tools import align_matrix, plot_tools
+from sklearn import metrics
+from tqdm import tqdm
 
 # build paths
 root_folder = os.path.abspath(os.curdir)
@@ -33,23 +32,38 @@ slwe_exploit_eta = 0.01
 noise_bounds = [0, 1.0]
 noise_rate_list = np.linspace(noise_bounds[0], noise_bounds[1], num=15)
 for noise_rate in tqdm(noise_rate_list):
+
+	# generate sequence
 	multinomial_ins = Multinomial(25)
-	multinomial_ins.sudden_drift_diff(4, 10, 500, 0.3, 0.6)
-	multinomial_ins.inject_white_noise(4, noise_rate)
+	multinomial_ins.sudden_drift_diff(
+		alp_car = 4,
+		n = 10,
+		d = 500,
+		min_diff = 0.3,
+		max_diff = 0.6
+	)
+	multinomial_ins.inject_white_noise(
+		alp_car = 4,
+		noise_rate = noise_rate
+	)
+	sequence = [token for token in multinomial_ins.o_sequence]
 
 	slwe_explore = SLWE(4, 1-slwe_explore_eta)
-	slwe_explore.process_sequence(multinomial_ins.sequence, progress=False, progress_desc="SLWE (E)")
-	slwe_explore_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_explore.estimates)
+	slwe_explore.process_sequence(sequence, progress=False, progress_desc="SLWE (E)")
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_explore.token_index_map)
+	slwe_explore_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_explore.estimates)
 	slwe_explore_mae_list.append(slwe_explore_mae)
 
 	slwe_exploit = SLWE(4, 1-slwe_exploit_eta)
-	slwe_exploit.process_sequence(multinomial_ins.sequence, progress=False, progress_desc="SLWE (T)")
-	slwe_exploit_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_exploit.estimates)
+	slwe_exploit.process_sequence(sequence, progress=False, progress_desc="SLWE (T)")
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_exploit.token_index_map)
+	slwe_exploit_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_exploit.estimates)
 	slwe_exploit_mae_list.append(slwe_exploit_mae)
 
 	slwe_p = SLWE_P(4)
-	slwe_p.process_sequence(multinomial_ins.sequence, progress=False, progress_desc="SLWE_P")
-	slwe_p_mae = metrics.mean_absolute_error(multinomial_ins.p_sequence, slwe_p.estimates)
+	slwe_p.process_sequence(sequence, progress=False, progress_desc="SLWE_P")
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_p.token_index_map)
+	slwe_p_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_p.estimates)
 	slwe_p_mae_list.append(slwe_p_mae)
 
 # get turning points
