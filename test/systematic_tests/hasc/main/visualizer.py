@@ -1,18 +1,18 @@
 # batch or single experiment result visualizer
 
-import os
-import sys
+import csv
 import glob
 import json
-import csv
+import os
+import sys
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from natsort import natsorted
-from tqdm import tqdm
 from cycler import cycler
-
+from natsort import natsorted
 from pbnm.tools import plot_tools
+from tqdm import tqdm
 
 # get sequence id
 sequence_ids = []

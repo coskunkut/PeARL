@@ -1,18 +1,20 @@
 # batch experiment generator
 
+import collections
+import glob
 import json
 import os
-import glob
 import sys
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
-import collections
-from scipy import signal
-from natsort import natsorted
-from tqdm import tqdm
-from datetime import datetime
-from sklearn import preprocessing, cluster, metrics
 from bkmeans import BKMeans
+from natsort import natsorted
+from scipy import signal
+from sklearn import cluster, metrics, preprocessing
+from tqdm import tqdm
+
 
 def dump_json(current_experiment, experiment_file_path):
 	with open(experiment_file_path, "w") as json_file:
@@ -194,8 +196,8 @@ with tqdm(
 					discrete_clean_sequence = clusterer.predict(X_clean)
 					discrete_noisy_sequence = clusterer.predict(X_noisy)
 
-					current_experiment["sequence"]["discrete_clean"] = discrete_clean_sequence.tolist()
-					current_experiment["sequence"]["discrete_noisy"] = discrete_noisy_sequence.tolist()
+					current_experiment["sequence"]["discrete_clean"] = [str(i) for i in discrete_clean_sequence]
+					current_experiment["sequence"]["discrete_noisy"] = [str(i) for i in discrete_noisy_sequence]
 
 					current_experiment["preprocessing_info"]["clustering_config"] = clustering_config
 					current_experiment["preprocessing_info"]["clustering_result"] = {}
