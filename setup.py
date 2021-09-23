@@ -15,7 +15,8 @@ setup(
         "tabulate",
         "natsort",
         "filterpy",
-        "bkmeans"
+        "bkmeans",
+        "huffman"
     ],
     packages=find_packages()
 )
