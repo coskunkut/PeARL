@@ -1,0 +1,25 @@
+{
+    "experiment_info": {
+        "type": "text"
+    },
+    "algorithms_to_run": [
+        "huffman_static",
+        "slwe_e",
+        "slwe_t",
+        "slwe_p"
+    ],
+    "parameters": {
+        "slwe_e": {
+            "lambda": [0.9]
+        },
+        "slwe_t": {
+            "lambda": [0.99]
+        },
+        "slwe_p": {
+            "eta_min": [0.01],
+            "eta_max": [0.1],
+            "k": [5],
+            "L": [5]
+        }
+    }
+}
