@@ -14,6 +14,69 @@ from natsort import natsorted
 from pbnm.tools import plot_tools
 from tqdm import tqdm
 
+def nr_mae_fig(
+		noise_rate_list,
+		slwe_e_mae_list,
+		slwe_e_lambda,
+		slwe_t_mae_list,
+		slwe_t_lambda,
+		slwe_p_mae_list,
+		target_doc_props,
+		fig_path
+	):
+
+	# generate figure for current experiment (estimates)
+	fig, ax = plt.subplots(
+		nrows = 1,
+		ncols = 1,
+		figsize = plot_tools.set_size(
+			width = target_doc_props["textwidth"],
+			aspect_ratio = target_doc_props["ar"],
+			fraction = target_doc_props["fr"]
+		)
+	)
+	fig.set_tight_layout(True)
+
+	ax.plot(
+		noise_rate_list,
+		slwe_p_mae_list,
+		label = "SLWE-P",
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		zorder = 10
+	)
+	ax.plot(
+		noise_rate_list,
+		slwe_e_mae_list,
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		zorder = 10
+	)
+	ax.plot(
+		noise_rate_list,
+		slwe_t_mae_list,
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		zorder = 10
+	)
+
+	ax.set_xlabel("Noise Rate ($\omega$)")
+	# ax.set_xlim(0, 1)
+	ax.set_xticks(np.linspace(0, 1, num=11))
+	# ax.set_ylim(0, 0.4)
+	# ax.set_ylim(0)
+	ax.set_ylabel("MAE")
+	ax.grid(linestyle="dashed", alpha=0.5)
+	ax.legend(loc="upper left")
+
+	fig.savefig(fig_path, bbox_inches="tight", pad_inches=0.05)
+	plt.close()
+
 # get sequence id
 sequence_ids = []
 if len(sys.argv) == 2:
@@ -37,17 +100,27 @@ experiment_files_folder_path = os.path.join(batch_output_folder_path, "experimen
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 
+# build propery dict for target documents
+target_doc_props = {
+	"paper_double": {
+		"textwidth": "default",
+		"fr": 0.5,
+		"ar": 1.25,
+		"tex_config": "half"
+	},
+	"paper_single": {
+		"textwidth": "default",
+		"fr": 1,
+		"ar": 2.25,
+		"tex_config": "full"
+	}
+}
+
 # construct figure folder paths
 figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
 nr_mae_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "nr_mae", remove_existing=True)
-
-# build propery dict for target documents
-target_doc_props = {}
-target_doc_props["paper"] = {}
-target_doc_props["paper"]["textwidth"] = "default"
-target_doc_props["paper"]["fr"] = 0.5
-target_doc_props["paper"]["ar"] = 1.25
-target_doc_props["paper"]["tex_config"] = "half"
+for target_doc in target_doc_props.keys():
+	plot_tools.construct_figure_folder_path(nr_mae_figures_folder_path, target_doc, remove_existing=True)
 
 raw_table =  pd.read_csv(run_logs_path, sep=",", index_col=False)
 group_by_filter = [
@@ -55,14 +128,16 @@ group_by_filter = [
 	"noise_rate"
 ]
 grouped_table = raw_table.groupby(by=group_by_filter).mean().reset_index()
-# print(grouped_table)
-# exit()
 
 slwe_p_k_list = raw_table["slwe_p_k"].unique()
 slwe_p_L_list = raw_table["slwe_p_L"].unique()
-# print(slwe_p_k_list)
 
 alp_car = raw_table["alp_car"].unique()[0]
+
+# these matrices are for overall nr_mae fig
+slwe_e_mae_lists = np.zeros((18, 21))
+slwe_t_mae_lists = np.zeros((18, 21))
+slwe_p_mae_lists = np.zeros((18, 21))
 
 total_number_of_figs = len(target_doc_props.keys()) * len(sequence_ids) * len(slwe_p_k_list) * len(slwe_p_L_list)
 
@@ -84,7 +159,7 @@ with tqdm(
 		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
 		plt.rc("axes", prop_cycle=linestyle_cycler)
 
-		for sequence_id in sequence_ids:
+		for index, sequence_id in enumerate(sequence_ids):
 
 			for slwe_p_k in slwe_p_k_list:
 				for slwe_p_L in slwe_p_L_list:
@@ -94,9 +169,6 @@ with tqdm(
 						(grouped_table['slwe_p_k'] == slwe_p_k) &
 						(grouped_table['slwe_p_L'] == slwe_p_L)
 					]
-
-					# print(filtered_table)
-					# exit()
 
 					noise_rate_list = filtered_table["noise_rate"].unique()
 
@@ -108,60 +180,35 @@ with tqdm(
 
 					slwe_p_mae_list = filtered_table["slwe_p_mae"].unique()
 
-					# generate figure for current experiment (estimates)
-					fig, ax = plt.subplots(
-						nrows = 1,
-						ncols = 1,
-						figsize = plot_tools.set_size(
-							width = target_doc_props[target_doc]["textwidth"],
-							aspect_ratio = target_doc_props[target_doc]["ar"],
-							fraction = target_doc_props[target_doc]["fr"]
-						)
-					)
-					fig.set_tight_layout(True)
+					slwe_e_mae_lists[index] = slwe_e_mae_list
+					slwe_t_mae_lists[index] = slwe_t_mae_list
+					slwe_p_mae_lists[index] = slwe_p_mae_list
 
-					ax.plot(
-						noise_rate_list,
-						slwe_p_mae_list,
-						label = "SLWE-P",
-						color = "black",
-						alpha = 0.9,
-						linewidth = 1,
-						zorder = 10
-					)
-					ax.plot(
+					fig_name = "{}".format(sequence_id)
+					fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, target_doc, fig_name, "pdf")
+
+					nr_mae_fig(
 						noise_rate_list,
 						slwe_e_mae_list,
-						label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-						color = "black",
-						alpha = 0.9,
-						linewidth = 1,
-						zorder = 10
-					)
-					ax.plot(
-						noise_rate_list,
+						slwe_e_lambda,
 						slwe_t_mae_list,
-						label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-						color = "black",
-						alpha = 0.9,
-						linewidth = 1,
-						zorder = 10
+						slwe_t_lambda,
+						slwe_p_mae_list,
+						target_doc_props[target_doc],
+						fig_path
 					)
-
-					ax.set_xlabel("Noise Rate ($\omega$)")
-					# ax.set_xlim(0, 1)
-					ax.set_xticks(np.linspace(0, 1, num=11))
-					# ax.set_ylim(0, 0.4)
-					# ax.set_ylim(0)
-					ax.set_ylabel("MAE")
-					ax.grid(linestyle="dashed", alpha=0.5)
-					ax.legend(loc="upper left")
-
-					# fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
-					fig_name = "{}".format(sequence_id)
-					fig.savefig("{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"), bbox_inches="tight", pad_inches=0.05)
-					plt.close()
-
-					# plt.show()
 
 					pbar.update()
+
+# overall nr_mae
+fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "paper_single", "HASC_ALL", "pdf")
+nr_mae_fig(
+	np.linspace(0,1,21),
+	slwe_e_mae_lists.mean(0),
+	0.9,
+	slwe_t_mae_lists.mean(0),
+	0.99,
+	slwe_p_mae_lists.mean(0),
+	target_doc_props["paper_single"],
+	fig_path
+)
