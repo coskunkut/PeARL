@@ -96,10 +96,13 @@ for experiment_file in tqdm(
 	run_result_dict["noise_rate"] = noise_rate
 
 	sequence_length = len(current_experiment["sequence"]["discrete_clean"])
-	# p_sequence = np.zeros([sequence_length, alp_car])
-	# p_sequence = list(current_experiment["sequence"]["distribution_parameters"].values())
-	p_sequence = np.tile(list(current_experiment["sequence"]["distribution_parameters"].values()), (sequence_length, 1))
-	# print(p_sequence)
+	sampling_rate = 50000
+	# p_sequence = np.tile(list(current_experiment["sequence"]["distribution_parameters"].values()), (sequence_length, 1))
+	p_sequence = np.zeros([sequence_length, alp_car])
+	for index, key_val in enumerate(current_experiment["sequence"]["parameters"].items()):
+		key, val = key_val
+		p = list(val.values())
+		p_sequence[index*sampling_rate:(index+1)*sampling_rate, :] = p
 
 	# slwe_e
 	if "slwe_e" in algorithms_to_run:

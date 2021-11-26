@@ -11,6 +11,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from bkmeans import BKMeans
+from more_itertools.recipes import grouper
 from natsort import natsorted
 from scipy import signal
 from sklearn import cluster, metrics, preprocessing
@@ -20,6 +21,11 @@ from tqdm import tqdm
 def dump_json(current_experiment, experiment_file_path):
 	with open(experiment_file_path, "w") as json_file:
 		json.dump(current_experiment, json_file, indent=4)
+
+def id_to_path(info_table, motor_id, feature):
+	filtered_info_table = info_table.loc[info_table["Anonim_ID"] == motor_id]
+	return filtered_info_table[feature].values[0]
+	print(filtered_info_table)
 
 # get batch id
 if len(sys.argv) == 2:
@@ -74,13 +80,19 @@ experiment_file_count = 1
 info_table_path = os.path.join(data_folder_path, "info.csv")
 info_table = pd.read_csv(info_table_path, sep=",", header=0)
 
+raw_signal_file_paths_list = []
+for motor_id_list in batch_config["data"]["motor_ids"]:
+	raw_signal_file_names = [id_to_path(info_table, id, batch_config["data"]["feature"]) for id in motor_id_list]
+	raw_signal_file_paths = [os.path.join(data_folder_path, "samples", fn) for fn in raw_signal_file_names]
+	raw_signal_file_paths_list.append(raw_signal_file_paths)
+
 # filter data
-filtered_info_table = info_table.copy()
-filtered_info_table = filtered_info_table.loc[filtered_info_table["Anonim_ID"].isin(batch_config["data"]["motor_ids"])]
+# filtered_info_table = info_table.copy()
+# filtered_info_table = filtered_info_table.loc[filtered_info_table["Anonim_ID"].isin(batch_config["data"]["motor_ids"])]
 
 # get raw signals
-raw_signal_file_names = filtered_info_table[batch_config["data"]["feature"]].tolist()
-raw_signal_file_paths = [os.path.join(data_folder_path, "samples", fn) for fn in raw_signal_file_names]
+# raw_signal_file_names = filtered_info_table[batch_config["data"]["feature"]].tolist()
+# raw_signal_file_paths = [os.path.join(data_folder_path, "samples", fn) for fn in raw_signal_file_names]
 
 # clustering parameters
 clustering_config = batch_config["preprocessing"]["clustering"]
@@ -126,13 +138,13 @@ with tqdm(
 		current_seed = int(seed_list[run_count])
 		current_rng = np.random.default_rng(current_seed)
 
-		for raw_signal_file_path in raw_signal_file_paths:
+		for raw_signal_file_paths in raw_signal_file_paths_list:
 
 			for noise_rate in noise_rate_list:
 
 				# get person and experiment id
-				sequence_data_id = raw_signal_file_path.rsplit("/", 1)[1].split(".")[0]
-
+				sequence_data_ids = [path.rsplit("/", 1)[1].split(".")[0] for path in raw_signal_file_paths]
+				sequence_data_id = "_".join(sequence_data_ids)
 
 				# prepare current experiment file
 				current_experiment = {}
@@ -144,11 +156,16 @@ with tqdm(
 				current_experiment["preprocessing_info"] = {}
 				current_experiment["parameters"] = {}
 				current_experiment["sequence"] = {}
+				current_experiment["sequence"]["parameters"] = {}
 
 				# read raw data
-				X_clean = np.fromfile(raw_signal_file_path, dtype=np.float32, count=-1, sep="").reshape(-1, 1)
-				steady_state_index_start, steady_state_index_end = [math.ceil(t * sampling_rate) for t in batch_config["data"]["steady_state_time"]]
-				X_clean = X_clean[steady_state_index_start:steady_state_index_end]
+				X_clean = []
+				for raw_signal_file_path in raw_signal_file_paths:
+					X_clean_partial = np.fromfile(raw_signal_file_path, dtype=np.float32, count=-1, sep="").reshape(-1, 1)
+					ssi_start, ssi_end = [math.ceil(t * sampling_rate) for t in batch_config["data"]["steady_state_time"]]
+					X_clean_partial = X_clean_partial[ssi_start:ssi_end]
+					X_clean.extend(X_clean_partial)
+				X_clean = np.array(X_clean)
 				observation_count = X_clean.shape[0]
 				bounds = [np.min(X_clean, axis=0), np.max(X_clean, axis=0)]
 				noisy_instance_count = int(np.ceil(observation_count * noise_rate))
@@ -186,14 +203,25 @@ with tqdm(
 					current_experiment["preprocessing_info"]["clustering_result"] = {}
 					current_experiment["preprocessing_info"]["clustering_result"]["number_of_clusters"] = number_of_clusters
 
-					# distribution parameters
-					discrete_clean_sequence_pd = pd.Series(discrete_clean_sequence)
-					distribution_parameters = discrete_clean_sequence_pd.value_counts(normalize=True, sort=False).to_dict()
-					for token in range(number_of_clusters):
-						if token not in distribution_parameters:
-							distribution_parameters[token] = 0
-					distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
-					current_experiment["sequence"]["distribution_parameters"] = distribution_parameters
+					# take portions of signal
+					portion_length = int(np.multiply(sampling_rate, np.abs(np.diff(batch_config["data"]["steady_state_time"])[0])))
+					for index, signal_portion in enumerate(grouper(discrete_clean_sequence, portion_length)):
+						discrete_clean_sequence_pd = pd.Series(signal_portion)
+						distribution_parameters = discrete_clean_sequence_pd.value_counts(normalize=True, sort=False).to_dict()
+						for token in range(number_of_clusters):
+							if token not in distribution_parameters:
+								distribution_parameters[token] = 0
+						distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
+						current_experiment["sequence"]["parameters"][index] = distribution_parameters
+
+					# # distribution parameters
+					# discrete_clean_sequence_pd = pd.Series(discrete_clean_sequence)
+					# distribution_parameters = discrete_clean_sequence_pd.value_counts(normalize=True, sort=False).to_dict()
+					# for token in range(number_of_clusters):
+					# 	if token not in distribution_parameters:
+					# 		distribution_parameters[token] = 0
+					# distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
+					# current_experiment["sequence"]["distribution_parameters"] = distribution_parameters
 
 					# # calculate distribution parameters for each action in the sequence
 					# for sequence_label_range_index in sequence_label_ranges_index:

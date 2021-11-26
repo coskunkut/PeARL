@@ -1,7 +1,8 @@
 {
     "data": {
         "motor_ids": [
-            200
+            [200, 205],
+            [210, 222]
         ],
         "steady_state_time": [4, 5],
         "feature": "filename_vibration"
