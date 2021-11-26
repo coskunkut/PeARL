@@ -170,8 +170,7 @@ with tqdm(
 						"algorithm": "bkmeans",
 						"parameters": {
 							"n_clusters": number_of_clusters,
-							"m": 4,
-							"theta": 1.1
+							"m": 4
 						}
 					}
 					clusterer = BKMeans(**current_config["parameters"], random_state=0)
