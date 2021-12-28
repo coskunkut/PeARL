@@ -36,6 +36,7 @@ if not os.path.exists(batch_output_folder_path):
 experiment_files_folder_path = os.path.join(batch_output_folder_path, "experiment_files")
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
+result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
 
 # construct figure folder paths
 figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
@@ -46,33 +47,24 @@ nr_mae_figures_folder_path = plot_tools.construct_figure_folder_path(figures_fol
 # change_score_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "change_scores", remove_existing=True)
 
 # build propery dict for target documents
-target_doc_props = {}
-target_doc_props["paper"] = {}
-target_doc_props["paper"]["textwidth"] = "default"
-target_doc_props["paper"]["fr"] = 0.5
-target_doc_props["paper"]["ar"] = 1.25
-target_doc_props["paper"]["tex_config"] = "half"
+target_doc_props = {
+	"paper": {
+		"textwidth": "default",
+		"fr": 0.5,
+		"ar": 1.25,
+		"tex_config": "half"
+	}
+}
+target_doc = "paper"
 
-raw_table =  pd.read_csv(run_logs_path, sep=",", index_col=False)
-group_by_filter = [
-	"drift_type",
-	"drift_params",
-	"alp_car",
-	"noise_rate",
-	"slwe_p_k",
-	"slwe_p_L"
-]
-grouped_table = raw_table.groupby(by=group_by_filter).mean().reset_index()
+raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
+# print(raw_table)
+# drift_type = raw_table["drift_type"].unique()[0]
+# drift_params = raw_table["drift_params"].unique()[0].replace("/", "_")
+noise_rates = raw_table["noise_rate"].values
+# alp_car = raw_table["alp_car"].unique()[0]
 
-slwe_p_k_list = raw_table["slwe_p_k"].unique()
-slwe_p_L_list = raw_table["slwe_p_L"].unique()
-# print(slwe_p_k_list)
-
-drift_type = raw_table["drift_type"].unique()[0]
-drift_params = raw_table["drift_params"].unique()[0].replace("/", "_")
-alp_car = raw_table["alp_car"].unique()[0]
-
-total_number_of_figs = len(target_doc_props.keys()) * len(slwe_p_k_list) * len(slwe_p_L_list)
+total_number_of_figs = 1
 
 with tqdm(
 	total = total_number_of_figs,
@@ -83,84 +75,92 @@ with tqdm(
 	ascii = True
 	) as pbar:
 
-	for target_doc in target_doc_props.keys():
+	# matplotlib config
+	plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
 
-		# matplotlib config
-		plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+	# different line styles for each curve
+	# linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
+	# plt.rc("axes", prop_cycle=linestyle_cycler)
 
-		# different line styles for each curve
-		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
-		plt.rc("axes", prop_cycle=linestyle_cycler)
+	slwe_e_lambda = 0.9
+	slwe_t_lambda = 0.99
 
-		for slwe_p_k in slwe_p_k_list:
-			for slwe_p_L in slwe_p_L_list:
+	slwe_e_mae_list = raw_table["SLWE (E)"].values
+	slwe_t_mae_list = raw_table["SLWE (T)"].values
+	slwe_p_a_mae_list = raw_table["SLWE-PA"].values
+	slwe_p_e_mae_list = raw_table["SLWE-PE"].values
 
-				filtered_table = grouped_table.query("slwe_p_k=={} and slwe_p_L=={}".format(slwe_p_k, slwe_p_L)).reset_index()
-				# print(filtered_table)
-				noise_rate_list = filtered_table["noise_rate"].unique()
+	# generate figure for current experiment (estimates)
+	fig, ax = plt.subplots(
+		nrows = 1,
+		ncols = 1,
+		figsize = plot_tools.set_size(
+			width = target_doc_props[target_doc]["textwidth"],
+			aspect_ratio = target_doc_props[target_doc]["ar"],
+			fraction = target_doc_props[target_doc]["fr"]
+		)
+	)
+	fig.set_tight_layout(True)
 
-				slwe_e_lambda = filtered_table["slwe_e_lambda"].unique()[0]
-				slwe_e_mae_list = filtered_table["slwe_e_mae"].unique()
+	ax.plot(
+		noise_rates,
+		slwe_p_a_mae_list,
+		label = "SLWE-PA",
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		linestyle = "solid",
+		zorder = 10
+	)
+	ax.plot(
+		noise_rates,
+		slwe_p_e_mae_list,
+		label = "SLWE-PE",
+		color = "maroon",
+		alpha = 0.9,
+		linewidth = 1,
+		linestyle = "solid",
+		zorder = 10
+	)
+	ax.plot(
+		noise_rates,
+		slwe_e_mae_list,
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		linestyle = "dashed",
+		zorder = 10
+	)
+	ax.plot(
+		noise_rates,
+		slwe_t_mae_list,
+		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+		color = "black",
+		alpha = 0.9,
+		linewidth = 1,
+		linestyle = "dotted",
+		zorder = 10
+	)
 
-				slwe_t_lambda = filtered_table["slwe_t_lambda"].unique()[0]
-				slwe_t_mae_list = filtered_table["slwe_t_mae"].unique()
+	ax.set_xlabel("Noise Rate ($\omega$)")
+	# ax.set_xlim(0, 1)
+	ax.set_xticks(np.linspace(0, 1, num=11))
+	# ax.set_ylim(0, 0.4)
+	# ax.set_ylim(0)
+	ax.set_ylabel("MAE")
+	ax.grid(linestyle="dashed", alpha=0.5)
+	ax.legend(loc="upper left")
 
-				slwe_p_mae_list = filtered_table["slwe_p_mae"].unique()
+	# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
+	fig_name = "nr_mae".format()
+	fig.savefig(
+		"{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"),
+		bbox_inches = "tight",
+		pad_inches = 0.05
+	)
+	plt.close()
 
-				# generate figure for current experiment (estimates)
-				fig, ax = plt.subplots(
-					nrows = 1,
-					ncols = 1,
-					figsize = plot_tools.set_size(
-						width = target_doc_props[target_doc]["textwidth"],
-						aspect_ratio = target_doc_props[target_doc]["ar"],
-						fraction = target_doc_props[target_doc]["fr"]
-					)
-				)
-				fig.set_tight_layout(True)
+	# plt.show()
 
-				ax.plot(
-					noise_rate_list,
-					slwe_p_mae_list,
-					label = "SLWE-P",
-					color = "black",
-					alpha = 0.9,
-					linewidth = 1,
-					zorder = 10
-				)
-				ax.plot(
-					noise_rate_list,
-					slwe_e_mae_list,
-					label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-					color = "black",
-					alpha = 0.9,
-					linewidth = 1,
-					zorder = 10
-				)
-				ax.plot(
-					noise_rate_list,
-					slwe_t_mae_list,
-					label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-					color = "black",
-					alpha = 0.9,
-					linewidth = 1,
-					zorder = 10
-				)
-
-				ax.set_xlabel("Noise Rate ($\omega$)")
-				# ax.set_xlim(0, 1)
-				ax.set_xticks(np.linspace(0, 1, num=11))
-				# ax.set_ylim(0, 0.4)
-				# ax.set_ylim(0)
-				ax.set_ylabel("MAE")
-				ax.grid(linestyle="dashed", alpha=0.5)
-				ax.legend(loc="upper left")
-
-				# fig_name = "k{}_L{}".format(slwe_p_k, slwe_p_L)
-				fig_name = "{}_{}_c{}".format(drift_type, drift_params, alp_car)
-				fig.savefig("{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"), bbox_inches="tight", pad_inches=0.05)
-				plt.close()
-
-				# plt.show()
-
-				pbar.update()
+	pbar.update()

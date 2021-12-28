@@ -58,42 +58,29 @@ seed_list = rng.integers(low=0, high=999999, size=number_of_runs)
 experiment_file_count = 1
 
 # sequence parameters
-drift_types = batch_config["sequence_info"]["drift_type"].keys()
-run_multiplier = 1
-if "sudden" in drift_types:
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["sudden"]["frequency"])
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["sudden"]["severity"])
-elif "incremental_sin" in drift_types:
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["incremental_sin"]["pi_range"])
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["incremental_sin"]["frequency"])
-elif "incremental_lin" in drift_types:
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["incremental_lin"]["frequency"])
-	run_multiplier *= len(batch_config["sequence_info"]["drift_type"]["incremental_lin"]["severity"])
-
-alp_car_list = batch_config["sequence_info"]["alphabet_cardinality"]
+drift_type = list(batch_config["sequence_info"]["drift_type"].keys())[0]
+alp_car = batch_config["sequence_info"]["alphabet_cardinality"]
 noise_rate_list = batch_config["sequence_info"]["noise_rate"]
 
 # slwe parameters
-slwe_e_lambda_list = batch_config["parameters"]["slwe_e"]["lambda"]
-slwe_t_lambda_list = batch_config["parameters"]["slwe_t"]["lambda"]
+slwe_e_lambda = batch_config["parameters"]["slwe_e"]["lambda"]
+slwe_t_lambda = batch_config["parameters"]["slwe_t"]["lambda"]
 
-# slwe_p parameters
-slwe_p_eta_list = batch_config["parameters"]["slwe_p"]["eta"]
-slwe_p_k_list = batch_config["parameters"]["slwe_p"]["k"]
-slwe_p_L_list = batch_config["parameters"]["slwe_p"]["L"]
+# slwe_p_a parameters
+slwe_p_a_eta = batch_config["parameters"]["slwe_p_a"]["eta"]
+slwe_p_a_rho_eta_mapping = batch_config["parameters"]["slwe_p_a"]["rho_eta_mapping"]
+slwe_p_a_k = batch_config["parameters"]["slwe_p_a"]["k"]
+slwe_p_a_L = batch_config["parameters"]["slwe_p_a"]["L"]
 
+# slwe_p_e parameters
+slwe_p_e_eta = batch_config["parameters"]["slwe_p_e"]["eta"]
+slwe_p_e_rho_eta_mapping = batch_config["parameters"]["slwe_p_e"]["rho_eta_mapping"]
+slwe_p_e_k = batch_config["parameters"]["slwe_p_e"]["k"]
+slwe_p_e_L = batch_config["parameters"]["slwe_p_e"]["L"]
 
 total_number_of_runs = np.prod([
 		number_of_runs,
-		len(drift_types),
-		run_multiplier,
-		len(alp_car_list),
 		len(noise_rate_list),
-		len(slwe_e_lambda_list),
-		len(slwe_t_lambda_list),
-		len(slwe_p_eta_list),
-		len(slwe_p_k_list),
-		len(slwe_p_L_list)
 	]
 )
 
@@ -120,111 +107,107 @@ with tqdm(
 		current_experiment["algorithms_to_run"] = algorithms_to_run
 		current_experiment["parameters"] = {}
 		current_experiment["sequence_info"] = {}
+		current_experiment["sequence_info"]["alphabet_cardinality"] = alp_car
 		current_experiment["sequence_info"]["drift_type"] = {}
 
 		# slwe_e parameters
-		for slwe_e_lambda in slwe_e_lambda_list:
-			current_experiment["parameters"]["slwe_e"] = {}
-			current_experiment["parameters"]["slwe_e"]["lambda"] = slwe_e_lambda
+		current_experiment["parameters"]["slwe_e"] = {}
+		current_experiment["parameters"]["slwe_e"]["lambda"] = slwe_e_lambda
 
-			# slwe_t parameters
-			for slwe_t_lambda in slwe_t_lambda_list:
-				current_experiment["parameters"]["slwe_t"] = {}
-				current_experiment["parameters"]["slwe_t"]["lambda"] = slwe_t_lambda
+		# slwe_t parameters
+		current_experiment["parameters"]["slwe_t"] = {}
+		current_experiment["parameters"]["slwe_t"]["lambda"] = slwe_t_lambda
 
-				# slwe_p parameters
-				for slwe_p_eta in slwe_p_eta_list:
-					for slwe_p_k in slwe_p_k_list:
-						for slwe_p_L in slwe_p_L_list:
+		# slwe_p_a parameters
+		current_experiment["parameters"]["slwe_p_a"] = {}
+		current_experiment["parameters"]["slwe_p_a"]["rho_eta_mapping"] = slwe_p_a_rho_eta_mapping
+		current_experiment["parameters"]["slwe_p_a"]["eta_min"] = slwe_p_a_eta["min"]
+		current_experiment["parameters"]["slwe_p_a"]["eta_max"] = slwe_p_a_eta["max"]
+		current_experiment["parameters"]["slwe_p_a"]["k"] = slwe_p_a_k
+		current_experiment["parameters"]["slwe_p_a"]["L"] = slwe_p_a_L
 
-									current_experiment["parameters"]["slwe_p"] = {}
-									current_experiment["parameters"]["slwe_p"]["eta_min"] = slwe_p_eta["min"]
-									current_experiment["parameters"]["slwe_p"]["eta_max"] = slwe_p_eta["max"]
-									current_experiment["parameters"]["slwe_p"]["k"] = slwe_p_k
-									current_experiment["parameters"]["slwe_p"]["L"] = slwe_p_L
+		# slwe_p_e parameters
+		current_experiment["parameters"]["slwe_p_e"] = {}
+		current_experiment["parameters"]["slwe_p_e"]["rho_eta_mapping"] = slwe_p_e_rho_eta_mapping
+		current_experiment["parameters"]["slwe_p_e"]["eta_min"] = slwe_p_e_eta["min"]
+		current_experiment["parameters"]["slwe_p_e"]["eta_max"] = slwe_p_e_eta["max"]
+		current_experiment["parameters"]["slwe_p_e"]["k"] = slwe_p_e_k
+		current_experiment["parameters"]["slwe_p_e"]["L"] = slwe_p_e_L
 
-									for alp_car in alp_car_list:
+		for noise_rate in noise_rate_list:
 
-										current_experiment["sequence_info"]["alphabet_cardinality"] = alp_car
+			current_experiment["sequence_info"]["noise_rate"] = noise_rate
+			
+			# sequence parameters
+			if drift_type == "sudden":
+				frequency = batch_config["sequence_info"]["drift_type"]["sudden"]["frequency"]
+				severity = batch_config["sequence_info"]["drift_type"]["sudden"]["severity"]
+				n, d = frequency["n"], frequency["d"]
+				min_diff, max_diff = severity["min"], severity["max"]
+				multinomial_ins = Multinomial(current_seed)
+				multinomial_ins.sudden_drift_diff(alp_car, n, d, min_diff, max_diff)
+				multinomial_ins.inject_white_noise(alp_car, noise_rate)
+				current_experiment["sequence_info"]["drift_type"] = "sudden"
+				current_experiment["sequence_info"]["drift_params"] = {}
+				current_experiment["sequence_info"]["drift_params"]["n"] = n
+				current_experiment["sequence_info"]["drift_params"]["d"] = d
+				current_experiment["sequence_info"]["drift_params"]["p_diff_min"] = min_diff
+				current_experiment["sequence_info"]["drift_params"]["p_diff_max"] = max_diff
+				current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
+				# current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
+				current_experiment["sequence_info"]["sequence"] = list(map(str, multinomial_ins.o_sequence))
+				current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
+				experiment_name = "exp_{}".format(experiment_file_count)
+				current_experiment["experiment_info"]["name"] = experiment_name
+				experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
+				dump_json(current_experiment, experiment_file_path)
+				experiment_file_count += 1
+				pbar.update()
 
-										for noise_rate in noise_rate_list:
+			# elif drift_type == "mixed":
 
-											current_experiment["sequence_info"]["noise_rate"] = noise_rate
-											
-											# sequence parameters
-											for drift_type in drift_types:
+			# 	small_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["small_sudden"]
+			# 	large_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["large_sudden"]
+			# 	multinomial_ins = Multinomial(current_seed)
 
-												if drift_type == "sudden":
-													frequencies = batch_config["sequence_info"]["drift_type"]["sudden"]["frequency"]
-													severities = batch_config["sequence_info"]["drift_type"]["sudden"]["severity"]
-													for frequency in frequencies:
-														n, d = frequency["n"], frequency["d"]
-														for severity in severities:
-															min_diff, max_diff = severity["min"], severity["max"]
-															multinomial_ins = Multinomial(current_seed)
-															multinomial_ins.sudden_drift_diff(alp_car, n, d, min_diff, max_diff)
-															multinomial_ins.inject_white_noise(alp_car, noise_rate)
-															current_experiment["sequence_info"]["drift_type"] = "sudden"
-															current_experiment["sequence_info"]["drift_params"] = {}
-															current_experiment["sequence_info"]["drift_params"]["n"] = n
-															current_experiment["sequence_info"]["drift_params"]["d"] = d
-															current_experiment["sequence_info"]["drift_params"]["p_diff_min"] = min_diff
-															current_experiment["sequence_info"]["drift_params"]["p_diff_max"] = max_diff
-															current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
-															# current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
-															current_experiment["sequence_info"]["sequence"] = list(map(str, multinomial_ins.o_sequence))
-															current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
-															experiment_name = "exp_{}".format(experiment_file_count)
-															current_experiment["experiment_info"]["name"] = experiment_name
-															experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
-															dump_json(current_experiment, experiment_file_path)
-															experiment_file_count += 1
-															pbar.update()
+			# 	# small sudden
+			# 	multinomial_ins.sudden_drift_diff(
+			# 		alp_car, 
+			# 		small_sudden["n"], 
+			# 		small_sudden["d"], 
+			# 		small_sudden["min"], 
+			# 		small_sudden["max"],
+			# 		append = False
+			# 	)
 
-												# elif drift_type == "mixed":
+			# 	# large sudden
+			# 	multinomial_ins.sudden_drift_diff(
+			# 		alp_car, 
+			# 		large_sudden["n"], 
+			# 		large_sudden["d"], 
+			# 		large_sudden["min"], 
+			# 		large_sudden["max"],
+			# 		append = True
+			# 	)
 
-												# 	small_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["small_sudden"]
-												# 	large_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["large_sudden"]
-												# 	multinomial_ins = Multinomial(current_seed)
-
-												# 	# small sudden
-												# 	multinomial_ins.sudden_drift_diff(
-												# 		alp_car, 
-												# 		small_sudden["n"], 
-												# 		small_sudden["d"], 
-												# 		small_sudden["min"], 
-												# 		small_sudden["max"],
-												# 		append = False
-												# 	)
-
-												# 	# large sudden
-												# 	multinomial_ins.sudden_drift_diff(
-												# 		alp_car, 
-												# 		large_sudden["n"], 
-												# 		large_sudden["d"], 
-												# 		large_sudden["min"], 
-												# 		large_sudden["max"],
-												# 		append = True
-												# 	)
-
-												# 	current_experiment["sequence_info"]["drift_type"] = "mixed"
-												# 	current_experiment["sequence_info"]["drift_params"] = {}
-												# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"] = {}
-												# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["n"] = small_sudden["n"]
-												# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["d"] = small_sudden["d"]
-												# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_min"] = small_sudden["min"]
-												# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_max"] = small_sudden["max"]
-												# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"] = {}
-												# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["n"] = large_sudden["n"]
-												# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["d"] = large_sudden["d"]
-												# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_min"] = large_sudden["min"]
-												# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_max"] = large_sudden["max"]
-												# 	current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
-												# 	current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
-												# 	current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
-												# 	experiment_name = "exp_{}".format(experiment_file_count)
-												# 	current_experiment["experiment_info"]["name"] = experiment_name
-												# 	experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
-												# 	dump_json(current_experiment, experiment_file_path)
-												# 	experiment_file_count += 1
-												# 	pbar.update()
+			# 	current_experiment["sequence_info"]["drift_type"] = "mixed"
+			# 	current_experiment["sequence_info"]["drift_params"] = {}
+			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"] = {}
+			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["n"] = small_sudden["n"]
+			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["d"] = small_sudden["d"]
+			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_min"] = small_sudden["min"]
+			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_max"] = small_sudden["max"]
+			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"] = {}
+			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["n"] = large_sudden["n"]
+			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["d"] = large_sudden["d"]
+			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_min"] = large_sudden["min"]
+			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_max"] = large_sudden["max"]
+			# 	current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
+			# 	current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
+			# 	current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
+			# 	experiment_name = "exp_{}".format(experiment_file_count)
+			# 	current_experiment["experiment_info"]["name"] = experiment_name
+			# 	experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
+			# 	dump_json(current_experiment, experiment_file_path)
+			# 	experiment_file_count += 1
+			# 	pbar.update()

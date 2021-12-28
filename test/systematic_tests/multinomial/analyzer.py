@@ -54,13 +54,21 @@ if "slwe_t" in algorithms_to_run:
 		"slwe_t_lambda",
 		"slwe_t_mae"
 	])
-if "slwe_p" in algorithms_to_run:
+if "slwe_p_a" in algorithms_to_run:
 	fieldnames.extend([
-		"slwe_p_eta_min",
-		"slwe_p_eta_max",
-		"slwe_p_k",
-		"slwe_p_L",
-		"slwe_p_mae"
+		"slwe_p_a_eta_min",
+		"slwe_p_a_eta_max",
+		"slwe_p_a_k",
+		"slwe_p_a_L",
+		"slwe_p_a_mae"
+	])
+if "slwe_p_e" in algorithms_to_run:
+	fieldnames.extend([
+		"slwe_p_e_eta_min",
+		"slwe_p_e_eta_max",
+		"slwe_p_e_k",
+		"slwe_p_e_L",
+		"slwe_p_e_mae"
 	])
 
 # prepare csv file, write header row
@@ -153,18 +161,31 @@ for experiment_file in tqdm(
 		run_result_dict["slwe_t_mae"] = slwe_t_mae
 		current_experiment["results"]["slwe_t"]["mae"] = slwe_t_mae
 
-	# slwe_p
-	if "slwe_p" in algorithms_to_run:
-		run_result_dict["slwe_p_eta_min"] = current_experiment["parameters"]["slwe_p"]["eta_min"]
-		run_result_dict["slwe_p_eta_max"] = current_experiment["parameters"]["slwe_p"]["eta_max"]
-		run_result_dict["slwe_p_k"] = current_experiment["parameters"]["slwe_p"]["k"]
-		run_result_dict["slwe_p_L"] = current_experiment["parameters"]["slwe_p"]["L"]
-		slwe_p_estimates = current_experiment["results"]["slwe_p"]["estimates"]
-		slwe_p_token_index_map = current_experiment["results"]["slwe_p"]["token_index_map"]
-		slwe_p_aligned_p_sequence = align_matrix(parameter_sequence, slwe_p_token_index_map)
-		slwe_p_mae = metrics.mean_absolute_error(slwe_p_aligned_p_sequence, slwe_p_estimates)
-		run_result_dict["slwe_p_mae"] = slwe_p_mae
-		current_experiment["results"]["slwe_p"]["mae"] = slwe_p_mae
+	# slwe_p_a
+	if "slwe_p_a" in algorithms_to_run:
+		run_result_dict["slwe_p_a_eta_min"] = current_experiment["parameters"]["slwe_p_a"]["eta_min"]
+		run_result_dict["slwe_p_a_eta_max"] = current_experiment["parameters"]["slwe_p_a"]["eta_max"]
+		run_result_dict["slwe_p_a_k"] = current_experiment["parameters"]["slwe_p_a"]["k"]
+		run_result_dict["slwe_p_a_L"] = current_experiment["parameters"]["slwe_p_a"]["L"]
+		slwe_p_a_estimates = current_experiment["results"]["slwe_p_a"]["estimates"]
+		slwe_p_a_token_index_map = current_experiment["results"]["slwe_p_a"]["token_index_map"]
+		slwe_p_a_aligned_p_sequence = align_matrix(parameter_sequence, slwe_p_a_token_index_map)
+		slwe_p_a_mae = metrics.mean_absolute_error(slwe_p_a_aligned_p_sequence, slwe_p_a_estimates)
+		run_result_dict["slwe_p_a_mae"] = slwe_p_a_mae
+		current_experiment["results"]["slwe_p_a"]["mae"] = slwe_p_a_mae
+
+	# slwe_p_e
+	if "slwe_p_e" in algorithms_to_run:
+		run_result_dict["slwe_p_e_eta_min"] = current_experiment["parameters"]["slwe_p_e"]["eta_min"]
+		run_result_dict["slwe_p_e_eta_max"] = current_experiment["parameters"]["slwe_p_e"]["eta_max"]
+		run_result_dict["slwe_p_e_k"] = current_experiment["parameters"]["slwe_p_e"]["k"]
+		run_result_dict["slwe_p_e_L"] = current_experiment["parameters"]["slwe_p_e"]["L"]
+		slwe_p_e_estimates = current_experiment["results"]["slwe_p_e"]["estimates"]
+		slwe_p_e_token_index_map = current_experiment["results"]["slwe_p_e"]["token_index_map"]
+		slwe_p_e_aligned_p_sequence = align_matrix(parameter_sequence, slwe_p_e_token_index_map)
+		slwe_p_e_mae = metrics.mean_absolute_error(slwe_p_e_aligned_p_sequence, slwe_p_e_estimates)
+		run_result_dict["slwe_p_e_mae"] = slwe_p_e_mae
+		current_experiment["results"]["slwe_p_e"]["mae"] = slwe_p_e_mae
 	
 	# append results of current run to csv file
 	with open(run_logs_path, mode="a") as run_logs_file:
