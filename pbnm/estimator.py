@@ -73,10 +73,13 @@ class SLWE:
 
 class SLWE_P:
 
-	def __init__(self, alphabet_cardinality):
+	def __init__(self, alphabet_cardinality, rho_eta_mapping="event_linear"):
 
 		# alphabet cardinality must be known to initialize estimate vectors
 		self.alphabet_cardinality = alphabet_cardinality
+
+		# rho to eta mapping type
+		self.rho_eta_mapping = rho_eta_mapping
 
 		# the corresponding index for each token is stored in this dict.
 		self.token_index_map = {}
@@ -123,17 +126,18 @@ class SLWE_P:
 		self.rho.append(rho.tolist())
 
 	# calculate the new value of eta by a linear mapping to rho
-	def rho_to_eta_linear(self, token_index):
+	def rho_to_eta_event_linear(self, token_index):
 		bound_diff = self.eta_max - self.eta_min
 		self.eta = (self.rho[-1][token_index] * bound_diff) + self.eta_min
 		self.eta_history.append(self.eta)
 
 	# linear mapping from rho to eta, but min(rho) is E[rho] of white noise
-	def rho_to_eta_linear_exp(self, token_index):
-		rho_min = (np.power(self.k, 1/self.alphabet_cardinality) - 1) / (self.k - 1)
+	def rho_to_eta_avg_linear(self, token_index):
+		avg_rho_min = (np.power(self.k, 1/self.alphabet_cardinality) - 1) / (self.k - 1)
+		avg_rho_max = 1/self.alphabet_cardinality
 		eta_bound_diff = self.eta_max - self.eta_min
-		rho_bound_diff = 1 - rho_min
-		self.eta = self.eta_min + (((self.rho[-1][token_index] - rho_min) * eta_bound_diff) / rho_bound_diff)
+		rho_bound_diff = avg_rho_max - avg_rho_min
+		self.eta = self.eta_min + (((self.rho[-1][token_index] - avg_rho_min) * eta_bound_diff) / rho_bound_diff)
 		self.eta_history.append(self.eta)
 
 	# SLWE update
@@ -160,7 +164,13 @@ class SLWE_P:
 	def process_token(self, token):
 		index = self.get_index(token)
 		self.calculate_rho(index)
-		self.rho_to_eta_linear(index)
+		if self.rho_eta_mapping == "event_linear":
+			self.rho_to_eta_event_linear(index)
+		elif self.rho_eta_mapping == "avg_linear":
+			self.rho_to_eta_avg_linear(index)
+		else:
+			print("unknown mapping type")
+			exit()
 		self.LRI_update(index)
 
 	# processes each token in a given sequence, shows progress information
