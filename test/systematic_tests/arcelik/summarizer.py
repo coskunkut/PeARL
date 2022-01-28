@@ -41,13 +41,23 @@ group_by_filter = [
 	# "alp_car",
 	"noise_rate"
 ]
-if "slwe_p" in algorithms_to_run:
-	summary_table_columns.append("SLWE-P")
+if "slwe_p_a" in algorithms_to_run:
+	summary_table_columns.append("SLWE-P (A)")
 	group_by_filter.extend([
-		"slwe_p_eta_min",
-		"slwe_p_eta_max",
-		"slwe_p_k",
-		"slwe_p_L"
+		"slwe_p_a_eta_min",
+		"slwe_p_a_eta_max",
+		"slwe_p_a_rho_eta_mapping",
+		"slwe_p_a_k",
+		"slwe_p_a_L"
+	])
+if "slwe_p_e" in algorithms_to_run:
+	summary_table_columns.append("SLWE-P (E)")
+	group_by_filter.extend([
+		"slwe_p_e_eta_min",
+		"slwe_p_e_eta_max",
+		"slwe_p_e_rho_eta_mapping",
+		"slwe_p_e_k",
+		"slwe_p_e_L"
 	])
 if "slwe_e" in algorithms_to_run:
 	summary_table_columns.append("SLWE (E)")
@@ -66,8 +76,10 @@ if "slwe_e" in algorithms_to_run:
 	summary_table["SLWE (E)"] = grouped_table["slwe_e_mae"]
 if "slwe_t" in algorithms_to_run:
 	summary_table["SLWE (T)"] = grouped_table["slwe_t_mae"]
-if "slwe_p" in algorithms_to_run:
-	summary_table["SLWE-P"] = grouped_table["slwe_p_mae"]
+if "slwe_p_a" in algorithms_to_run:
+	summary_table["SLWE-P (A)"] = grouped_table["slwe_p_a_mae"]
+if "slwe_p_e" in algorithms_to_run:
+	summary_table["SLWE-P (E)"] = grouped_table["slwe_p_e_mae"]
 
 # summary_table = summary_table.transpose().reset_index()
 

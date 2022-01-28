@@ -81,11 +81,11 @@ experiment_file_count = 1
 info_table_path = os.path.join(data_folder_path, "info.csv")
 info_table = pd.read_csv(info_table_path, sep=",", header=0)
 
-raw_signal_file_paths_list = []
+raw_signal_file_paths_dict = {}
 for motor_id_list in batch_config["data"]["motor_ids"]:
 	raw_signal_file_names = [id_to_path(info_table, id, batch_config["data"]["feature"]) for id in motor_id_list]
 	raw_signal_file_paths = [os.path.join(data_folder_path, "samples", fn) for fn in raw_signal_file_names]
-	raw_signal_file_paths_list.append(raw_signal_file_paths)
+	raw_signal_file_paths_dict["_".join([str(e) for e in motor_id_list])] = raw_signal_file_paths
 
 # filter data
 # filtered_info_table = info_table.copy()
@@ -98,28 +98,12 @@ for motor_id_list in batch_config["data"]["motor_ids"]:
 # clustering parameters
 clustering_config = batch_config["preprocessing"]["clustering"]
 
-# slwe parameters
-slwe_e_lambda_list = batch_config["parameters"]["slwe_e"]["lambda"]
-slwe_t_lambda_list = batch_config["parameters"]["slwe_t"]["lambda"]
-
-# slwe_p parameters
-slwe_p_eta_min_list = batch_config["parameters"]["slwe_p"]["eta_min"]
-slwe_p_eta_max_list = batch_config["parameters"]["slwe_p"]["eta_max"]
-slwe_p_k_list = batch_config["parameters"]["slwe_p"]["k"]
-slwe_p_L_list = batch_config["parameters"]["slwe_p"]["L"]
-
 noise_rate_list = batch_config["preprocessing"]["noise_injection"]["noise_rate"]
 
 total_number_of_runs = np.prod([
 		number_of_runs,
 		len(batch_config["data"]["motor_ids"]),
-		len(noise_rate_list),
-		len(slwe_e_lambda_list),
-		len(slwe_t_lambda_list),
-		len(slwe_p_eta_min_list),
-		len(slwe_p_eta_max_list),
-		len(slwe_p_k_list),
-		len(slwe_p_L_list)
+		len(noise_rate_list)
 	]
 )
 
@@ -139,19 +123,15 @@ with tqdm(
 		current_seed = int(seed_list[run_count])
 		current_rng = np.random.default_rng(current_seed)
 
-		for raw_signal_file_paths in raw_signal_file_paths_list:
+		for raw_signal_ids, raw_signal_file_paths in raw_signal_file_paths_dict.items():
 
 			for noise_rate in noise_rate_list:
-
-				# get person and experiment id
-				sequence_data_ids = [path.rsplit("/", 1)[1].split(".")[0] for path in raw_signal_file_paths]
-				sequence_data_id = "_".join(sequence_data_ids)
 
 				# prepare current experiment file
 				current_experiment = {}
 				current_experiment["algorithms_to_run"] = algorithms_to_run
 				current_experiment["experiment_info"] = {}
-				current_experiment["experiment_info"]["sequence_id"] = sequence_data_id
+				current_experiment["experiment_info"]["sequence_id"] = raw_signal_ids
 				current_experiment["experiment_info"]["experiment_id"] = ""
 				current_experiment["experiment_info"]["seed"] = current_seed
 				current_experiment["preprocessing_info"] = {}
@@ -234,31 +214,33 @@ with tqdm(
 						distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
 						current_experiment["sequence"]["parameters"][index] = distribution_parameters
 
-					# slwe_e parameters
-					for slwe_e_lambda in slwe_e_lambda_list:
-						current_experiment["parameters"]["slwe_e"] = {}
-						current_experiment["parameters"]["slwe_e"]["lambda"] = slwe_e_lambda
+					# algs. and parameters
+					current_experiment["parameters"] = {
+						"slwe_e": {
+							"lambda": batch_config["parameters"]["slwe_e"]["lambda"]
+						},
+						"slwe_t": {
+							"lambda": batch_config["parameters"]["slwe_t"]["lambda"]
+						},
+						"slwe_p_a": {
+							"eta_min": batch_config["parameters"]["slwe_p_a"]["eta_min"],
+							"eta_max": batch_config["parameters"]["slwe_p_a"]["eta_max"],
+							"rho_eta_mapping": batch_config["parameters"]["slwe_p_a"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["slwe_p_a"]["k"],
+							"L": batch_config["parameters"]["slwe_p_a"]["L"]
+						},
+						"slwe_p_e": {
+							"eta_min": batch_config["parameters"]["slwe_p_e"]["eta_min"],
+							"eta_max": batch_config["parameters"]["slwe_p_e"]["eta_max"],
+							"rho_eta_mapping": batch_config["parameters"]["slwe_p_e"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["slwe_p_e"]["k"],
+							"L": batch_config["parameters"]["slwe_p_e"]["L"]
+						}
+					}
 
-						# slwe_t parameters
-						for slwe_t_lambda in slwe_t_lambda_list:
-							current_experiment["parameters"]["slwe_t"] = {}
-							current_experiment["parameters"]["slwe_t"]["lambda"] = slwe_t_lambda
-
-							# slwe_p parameters
-							for slwe_p_eta_min in slwe_p_eta_min_list:
-								for slwe_p_eta_max in slwe_p_eta_max_list:
-									for slwe_p_k in slwe_p_k_list:
-										for slwe_p_L in slwe_p_L_list:
-								
-											current_experiment["parameters"]["slwe_p"] = {}
-											current_experiment["parameters"]["slwe_p"]["eta_min"] = slwe_p_eta_min
-											current_experiment["parameters"]["slwe_p"]["eta_max"] = slwe_p_eta_max
-											current_experiment["parameters"]["slwe_p"]["k"] = slwe_p_k
-											current_experiment["parameters"]["slwe_p"]["L"] = slwe_p_L
-
-											experiment_name = "exp_{}".format(experiment_file_count)
-											current_experiment["experiment_info"]["name"] = experiment_name
-											experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
-											dump_json(current_experiment, experiment_file_path)
-											experiment_file_count += 1
-											pbar.update()
+					experiment_name = "exp_{}".format(experiment_file_count)
+					current_experiment["experiment_info"]["name"] = experiment_name
+					experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
+					dump_json(current_experiment, experiment_file_path)
+					experiment_file_count += 1
+					pbar.update()

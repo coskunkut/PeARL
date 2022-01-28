@@ -48,21 +48,39 @@ def run_experiment(experiment_file):
 		current_experiment["results"]["slwe_t"]["estimates"] = slwe_t_ins.estimates
 		current_experiment["results"]["slwe_t"]["token_index_map"] = slwe_t_ins.token_index_map
 
-	# slwe_p
-	if "slwe_p" in algorithms_to_run:
-		slwe_p_eta_min = current_experiment["parameters"]["slwe_p"]["eta_min"]
-		slwe_p_eta_max = current_experiment["parameters"]["slwe_p"]["eta_max"]
-		slwe_p_k = current_experiment["parameters"]["slwe_p"]["k"]
-		slwe_p_L = current_experiment["parameters"]["slwe_p"]["L"]
-		slwe_p_ins = SLWE_P(alp_car, "event_linear")
-		slwe_p_ins.eta_min = slwe_p_eta_min
-		slwe_p_ins.eta_max = slwe_p_eta_max
-		slwe_p_ins.k = slwe_p_k
-		slwe_p_ins.L = slwe_p_L
-		slwe_p_ins.process_sequence(sequence, progress=False)
-		current_experiment["results"]["slwe_p"] = {}
-		current_experiment["results"]["slwe_p"]["estimates"] = slwe_p_ins.estimates
-		current_experiment["results"]["slwe_p"]["token_index_map"] = slwe_p_ins.token_index_map
+	# slwe_p_a
+	if "slwe_p_a" in algorithms_to_run:
+		slwe_p_a_eta_min = current_experiment["parameters"]["slwe_p_a"]["eta_min"]
+		slwe_p_a_eta_max = current_experiment["parameters"]["slwe_p_a"]["eta_max"]
+		slwe_p_a_rho_eta_mapping = current_experiment["parameters"]["slwe_p_a"]["rho_eta_mapping"]
+		slwe_p_a_k = current_experiment["parameters"]["slwe_p_a"]["k"]
+		slwe_p_a_L = current_experiment["parameters"]["slwe_p_a"]["L"]
+		slwe_p_a_ins = SLWE_P(alp_car, slwe_p_a_rho_eta_mapping)
+		slwe_p_a_ins.eta_min = slwe_p_a_eta_min
+		slwe_p_a_ins.eta_max = slwe_p_a_eta_max
+		slwe_p_a_ins.k = slwe_p_a_k
+		slwe_p_a_ins.L = slwe_p_a_L
+		slwe_p_a_ins.process_sequence(sequence, progress=False)
+		current_experiment["results"]["slwe_p_a"] = {}
+		current_experiment["results"]["slwe_p_a"]["estimates"] = slwe_p_a_ins.estimates
+		current_experiment["results"]["slwe_p_a"]["token_index_map"] = slwe_p_a_ins.token_index_map
+		
+	# slwe_p_e
+	if "slwe_p_e" in algorithms_to_run:
+		slwe_p_e_eta_min = current_experiment["parameters"]["slwe_p_e"]["eta_min"]
+		slwe_p_e_eta_max = current_experiment["parameters"]["slwe_p_e"]["eta_max"]
+		slwe_p_e_rho_eta_mapping = current_experiment["parameters"]["slwe_p_e"]["rho_eta_mapping"]
+		slwe_p_e_k = current_experiment["parameters"]["slwe_p_e"]["k"]
+		slwe_p_e_L = current_experiment["parameters"]["slwe_p_e"]["L"]
+		slwe_p_e_ins = SLWE_P(alp_car, slwe_p_e_rho_eta_mapping)
+		slwe_p_e_ins.eta_min = slwe_p_e_eta_min
+		slwe_p_e_ins.eta_max = slwe_p_e_eta_max
+		slwe_p_e_ins.k = slwe_p_e_k
+		slwe_p_e_ins.L = slwe_p_e_L
+		slwe_p_e_ins.process_sequence(sequence, progress=False)
+		current_experiment["results"]["slwe_p_e"] = {}
+		current_experiment["results"]["slwe_p_e"]["estimates"] = slwe_p_e_ins.estimates
+		current_experiment["results"]["slwe_p_e"]["token_index_map"] = slwe_p_e_ins.token_index_map
 
 	# append results to experiment file
 	with open(experiment_file_path, "w") as current_experiment_file:

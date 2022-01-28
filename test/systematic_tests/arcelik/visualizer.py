@@ -20,7 +20,8 @@ def nr_mae_fig(
 		slwe_e_lambda,
 		slwe_t_mae_list,
 		slwe_t_lambda,
-		slwe_p_mae_list,
+		slwe_p_a_mae_list,
+		slwe_p_e_mae_list,
 		target_doc_props,
 		fig_path
 	):
@@ -31,19 +32,31 @@ def nr_mae_fig(
 		ncols = 1,
 		figsize = plot_tools.set_size(
 			width = target_doc_props["textwidth"],
-			aspect_ratio = target_doc_props["ar"],
-			fraction = target_doc_props["fr"]
+			aspect_ratio = target_doc_props["aspect_ratio"],
+			fraction = target_doc_props["fraction"]
 		)
 	)
 	fig.set_tight_layout(True)
 
+	if slwe_p_a_mae_list is not None:
+		ax.plot(
+			noise_rate_list,
+			slwe_p_a_mae_list,
+			label = "SLWE-P (A)",
+			color = "maroon",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "solid",
+			zorder = 10
+		)
 	ax.plot(
 		noise_rate_list,
-		slwe_p_mae_list,
-		label = "SLWE-P",
+		slwe_p_e_mae_list,
+		label = "SLWE-P (E)",
 		color = "black",
 		alpha = 0.9,
 		linewidth = 1,
+		linestyle = "solid",
 		zorder = 10
 	)
 	ax.plot(
@@ -53,6 +66,7 @@ def nr_mae_fig(
 		color = "black",
 		alpha = 0.9,
 		linewidth = 1,
+		linestyle = "dashed",
 		zorder = 10
 	)
 	ax.plot(
@@ -62,6 +76,7 @@ def nr_mae_fig(
 		color = "black",
 		alpha = 0.9,
 		linewidth = 1,
+		linestyle = "dotted",
 		zorder = 10
 	)
 
@@ -70,7 +85,7 @@ def nr_mae_fig(
 	ax.set_xticks(np.linspace(0, 1, num=11))
 	# ax.set_ylim(0, 0.4)
 	# ax.set_ylim(0)
-	ax.set_ylabel("MAE")
+	ax.set_ylabel("Mean Absolute Error (MAE)")
 	ax.grid(linestyle="dashed", alpha=0.5)
 	ax.legend(loc="upper left")
 
@@ -96,17 +111,11 @@ run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 
 # build propery dict for target documents
 target_doc_props = {
-	"paper_double": {
-		"textwidth": "default",
-		"fr": 0.5,
-		"ar": 1.25,
-		"tex_config": "half"
-	},
-	"paper_single": {
-		"textwidth": "default",
-		"fr": 1,
-		"ar": 2.25,
-		"tex_config": "full"
+	"vanilla_paper_1c": {
+		"textwidth": "vanilla_paper",
+		"config": "latex",
+		"fraction": 1,
+		"aspect_ratio": 2.5
 	}
 }
 
@@ -124,17 +133,15 @@ group_by_filter = [
 ]
 grouped_table = raw_table.groupby(by=group_by_filter).mean().reset_index()
 
-slwe_p_k_list = raw_table["slwe_p_k"].unique()
-slwe_p_L_list = raw_table["slwe_p_L"].unique()
-
 alp_car = raw_table["alp_car"].unique()[0]
 
 # these matrices are for overall nr_mae fig
 slwe_e_mae_lists = np.zeros((18, 21))
 slwe_t_mae_lists = np.zeros((18, 21))
-slwe_p_mae_lists = np.zeros((18, 21))
+slwe_p_a_mae_lists = np.zeros((18, 21))
+slwe_p_e_mae_lists = np.zeros((18, 21))
 
-total_number_of_figs = len(target_doc_props.keys()) * len(sequence_ids) * len(slwe_p_k_list) * len(slwe_p_L_list)
+total_number_of_figs = len(target_doc_props.keys()) * len(sequence_ids)
 
 with tqdm(
 	total = total_number_of_figs,
@@ -148,62 +155,60 @@ with tqdm(
 	for target_doc in target_doc_props.keys():
 
 		# matplotlib config
-		plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["config"]])
 
 		# different line styles for each curve
-		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
-		plt.rc("axes", prop_cycle=linestyle_cycler)
+		# linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
+		# plt.rc("axes", prop_cycle=linestyle_cycler)
 
 		for index, sequence_id in enumerate(sequence_ids):
 
-			for slwe_p_k in slwe_p_k_list:
-				for slwe_p_L in slwe_p_L_list:
+			filtered_table = grouped_table.loc[(grouped_table['sequence_id'] == sequence_id)]
 
-					filtered_table = grouped_table.loc[
-						(grouped_table['sequence_id'] == sequence_id) &
-						(grouped_table['slwe_p_k'] == slwe_p_k) &
-						(grouped_table['slwe_p_L'] == slwe_p_L)
-					]
+			noise_rate_list = filtered_table["noise_rate"].unique()
 
-					noise_rate_list = filtered_table["noise_rate"].unique()
+			slwe_e_lambda = filtered_table["slwe_e_lambda"].unique()[0]
+			slwe_e_mae_list = filtered_table["slwe_e_mae"].unique()
 
-					slwe_e_lambda = filtered_table["slwe_e_lambda"].unique()[0]
-					slwe_e_mae_list = filtered_table["slwe_e_mae"].unique()
+			slwe_t_lambda = filtered_table["slwe_t_lambda"].unique()[0]
+			slwe_t_mae_list = filtered_table["slwe_t_mae"].unique()
 
-					slwe_t_lambda = filtered_table["slwe_t_lambda"].unique()[0]
-					slwe_t_mae_list = filtered_table["slwe_t_mae"].unique()
+			slwe_p_a_mae_list = filtered_table["slwe_p_a_mae"].unique()
+			slwe_p_e_mae_list = filtered_table["slwe_p_e_mae"].unique()
 
-					slwe_p_mae_list = filtered_table["slwe_p_mae"].unique()
+			slwe_e_mae_lists[index] = slwe_e_mae_list
+			slwe_t_mae_lists[index] = slwe_t_mae_list
+			slwe_p_a_mae_lists[index] = slwe_p_a_mae_list
+			slwe_p_e_mae_lists[index] = slwe_p_e_mae_list
 
-					slwe_e_mae_lists[index] = slwe_e_mae_list
-					slwe_t_mae_lists[index] = slwe_t_mae_list
-					slwe_p_mae_lists[index] = slwe_p_mae_list
+			fig_name = "{}".format(sequence_id)
+			fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, target_doc, fig_name, "pdf")
 
-					fig_name = "{}".format(sequence_id)
-					fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, target_doc, fig_name, "pdf")
+			nr_mae_fig(
+				noise_rate_list,
+				slwe_e_mae_list,
+				slwe_e_lambda,
+				slwe_t_mae_list,
+				slwe_t_lambda,
+				slwe_p_a_mae_list,
+				slwe_p_e_mae_list,
+				target_doc_props[target_doc],
+				fig_path
+			)
 
-					nr_mae_fig(
-						noise_rate_list,
-						slwe_e_mae_list,
-						slwe_e_lambda,
-						slwe_t_mae_list,
-						slwe_t_lambda,
-						slwe_p_mae_list,
-						target_doc_props[target_doc],
-						fig_path
-					)
-
-					pbar.update()
+			pbar.update()
 
 # overall nr_mae
-fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "paper_single", "arcelik_all", "pdf")
+fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "vanilla_paper_1c", "arcelik_all", "pdf")
 nr_mae_fig(
 	np.linspace(0,1,21),
 	slwe_e_mae_lists.mean(0),
 	0.9,
 	slwe_t_mae_lists.mean(0),
 	0.99,
-	slwe_p_mae_lists.mean(0),
-	target_doc_props["paper_single"],
+	None,
+	# slwe_p_a_mae_lists.mean(0),
+	slwe_p_e_mae_lists.mean(0),
+	target_doc_props["vanilla_paper_1c"],
 	fig_path
 )
