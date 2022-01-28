@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 from scipy import interpolate
+from more_itertools import windowed, grouper
 
 # orders columns of a matrix based on an index mapping
 def align_matrix(matrix, index_mapping):
@@ -10,6 +11,14 @@ def align_matrix(matrix, index_mapping):
 	for token, index in index_mapping.items():
 		aligned_matrix[:, index] = matrix[:, int(token)]
 	return aligned_matrix
+
+# decomposes given 1d signal into overlapping parts
+def decompose_signal(data, piece_length, overlap):
+	if overlap:
+		time_series_pieces = list(windowed(data, piece_length))
+	else:
+		time_series_pieces = list(grouper(data, piece_length, 0))
+	return time_series_pieces
 
 # efficient calculation of moving statistics
 class MovingStatistics(object):
@@ -54,18 +63,6 @@ class MovingStatistics(object):
 class plot_tools:
 
 	tex_config = {
-		"pat_reg_half": {
-			"text.usetex": True,
-			"font.family": "serif",
-			"font.size": 10,
-			"axes.titlesize": 10,
-			"axes.labelsize": 10,
-			"legend.fontsize": 8,
-			"xtick.labelsize": 8,
-			"ytick.labelsize": 8,
-			"figure.titlesize": 8,
-			"figure.facecolor": "#FFFFFF"
-		},
 		"half": {
 			"text.usetex": True,
 			"font.family": "serif",
@@ -89,31 +86,6 @@ class plot_tools:
 			"ytick.labelsize": 10,
 			"figure.titlesize": 10,
 			"figure.facecolor": "#FFFFFF"
-		},
-		"beamer": {
-			"text.usetex": True,
-			"font.family": "serif",
-			"font.size": 8,
-			"axes.titlesize": 10,
-			"axes.labelsize": 10,
-			"legend.fontsize": 8,
-			"xtick.labelsize": 8,
-			"ytick.labelsize": 8,
-			"figure.titlesize": 8,
-			"figure.facecolor": "#FAFAFA"
-		},
-		"beamer_169": {
-			"text.usetex": True,
-			"font.family": "sans-serif",
-			"font.size": 8,
-			"axes.titlesize": 10,
-			"axes.labelsize": 10,
-			"legend.fontsize": 8,
-			"xtick.labelsize": 8,
-			"ytick.labelsize": 8,
-			"figure.titlesize": 8,
-			"figure.facecolor": "#FAFAFA",
-			"axes.facecolor": "#FAFAFA"
 		}
 	}
 
