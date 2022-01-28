@@ -54,7 +54,7 @@ def run_experiment(experiment_file):
 		slwe_p_eta_max = current_experiment["parameters"]["slwe_p"]["eta_max"]
 		slwe_p_k = current_experiment["parameters"]["slwe_p"]["k"]
 		slwe_p_L = current_experiment["parameters"]["slwe_p"]["L"]
-		slwe_p_ins = SLWE_P(alp_car)
+		slwe_p_ins = SLWE_P(alp_car, "event_linear")
 		slwe_p_ins.eta_min = slwe_p_eta_min
 		slwe_p_ins.eta_max = slwe_p_eta_max
 		slwe_p_ins.k = slwe_p_k

@@ -16,6 +16,7 @@ from natsort import natsorted
 from scipy import signal
 from sklearn import cluster, metrics, preprocessing
 from tqdm import tqdm
+from pbnm.tools import decompose_signal
 
 
 def dump_json(current_experiment, experiment_file_path):
@@ -61,7 +62,7 @@ if not os.path.exists(experiment_files_folder_path):
 else:
 	experiment_files = glob.glob("{}/*.json".format(experiment_files_folder_path))
 	for experiment_file in experiment_files:
-	    os.remove(experiment_file)
+		os.remove(experiment_file)
 
 # initialize rng
 default_seed = 1123
@@ -160,22 +161,39 @@ with tqdm(
 
 				# read raw data
 				X_clean = []
-				for raw_signal_file_path in raw_signal_file_paths:
-					X_clean_partial = np.fromfile(raw_signal_file_path, dtype=np.float32, count=-1, sep="").reshape(-1, 1)
+				for index, raw_signal_file_path in enumerate(raw_signal_file_paths):
+					X_clean_partial = np.fromfile(raw_signal_file_path, dtype=np.float32, count=-1, sep="").reshape(-1, 1).ravel().tolist()
 					ssi_start, ssi_end = [math.ceil(t * sampling_rate) for t in batch_config["data"]["steady_state_time"]]
 					X_clean_partial = X_clean_partial[ssi_start:ssi_end]
+					# if index == 1:
+						# X_clean_partial = np.multiply(X_clean_partial, 2)
+					# current_rng.shuffle(X_clean_partial)
 					X_clean.extend(X_clean_partial)
+				regime_length = ssi_end - ssi_start
+				current_experiment["sequence"]["raw_clean"] = X_clean
+				# X_clean = np.array(X_clean).reshape(-1, 1)
 				X_clean = np.array(X_clean)
+				# print(X_clean.shape)
+
+				# inject white noise
 				observation_count = X_clean.shape[0]
-				bounds = [np.min(X_clean, axis=0), np.max(X_clean, axis=0)]
+				bounds = [np.min(X_clean), np.max(X_clean)]
 				noisy_instance_count = int(np.ceil(observation_count * noise_rate))
 				noisy_instance_indices = current_rng.choice(observation_count, noisy_instance_count, replace=False)
 				white_noise = np.zeros(noisy_instance_count)
 				white_noise += current_rng.uniform(bounds[0], bounds[1], noisy_instance_count)
-				X_noisy = np.array(X_clean, copy=True)  
-				X_noisy[noisy_instance_indices, 0] += white_noise
+				X_noisy = np.array(X_clean, copy=True)
+				X_noisy[noisy_instance_indices] += white_noise
 				noise_flags = np.zeros([observation_count], dtype=int)
 				noise_flags[noisy_instance_indices] += 1
+
+				piece_length = 10
+				X_clean_decomposed = decompose_signal(X_clean, piece_length, True)
+				
+				# print(X_clean_decomposed[0:10])
+
+				X_clean_grouped = decompose_signal(X_clean, piece_length, False)
+				X_noisy_grouped = decompose_signal(X_noisy, piece_length, False)
 
 				current_experiment["preprocessing_info"]["noise_injection"] = {
 					"noise_rate": noise_rate
@@ -187,25 +205,27 @@ with tqdm(
 						"algorithm": "bkmeans",
 						"parameters": {
 							"n_clusters": number_of_clusters,
-							"m": 4
+							"m": 5
 						}
 					}
 					clusterer = BKMeans(**current_config["parameters"], random_state=0)
-					clusterer.fit(X_clean)
+					clusterer.fit(X_clean_decomposed)
 
-					discrete_clean_sequence = clusterer.predict(X_clean)
-					discrete_noisy_sequence = clusterer.predict(X_noisy)
+					discrete_clean_sequence = clusterer.predict(X_clean_grouped)
+					discrete_noisy_sequence = clusterer.predict(X_noisy_grouped)
 
 					current_experiment["sequence"]["discrete_clean"] = [str(i) for i in discrete_clean_sequence]
 					current_experiment["sequence"]["discrete_noisy"] = [str(i) for i in discrete_noisy_sequence]
 
 					current_experiment["preprocessing_info"]["clustering_config"] = clustering_config
-					current_experiment["preprocessing_info"]["clustering_result"] = {}
-					current_experiment["preprocessing_info"]["clustering_result"]["number_of_clusters"] = number_of_clusters
+					current_experiment["preprocessing_info"]["clustering_result"] = {
+						"number_of_clusters": number_of_clusters,
+						"cluster_reps": np.array(clusterer.cluster_centers_).tolist(),
+					}
 
 					# take portions of signal
-					portion_length = int(np.multiply(sampling_rate, np.abs(np.diff(batch_config["data"]["steady_state_time"])[0])))
-					for index, signal_portion in enumerate(grouper(discrete_clean_sequence, portion_length)):
+					augmented_regime_length = int(regime_length / piece_length)
+					for index, signal_portion in enumerate(grouper(discrete_clean_sequence, augmented_regime_length)):
 						discrete_clean_sequence_pd = pd.Series(signal_portion)
 						distribution_parameters = discrete_clean_sequence_pd.value_counts(normalize=True, sort=False).to_dict()
 						for token in range(number_of_clusters):
@@ -213,30 +233,6 @@ with tqdm(
 								distribution_parameters[token] = 0
 						distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
 						current_experiment["sequence"]["parameters"][index] = distribution_parameters
-
-					# # distribution parameters
-					# discrete_clean_sequence_pd = pd.Series(discrete_clean_sequence)
-					# distribution_parameters = discrete_clean_sequence_pd.value_counts(normalize=True, sort=False).to_dict()
-					# for token in range(number_of_clusters):
-					# 	if token not in distribution_parameters:
-					# 		distribution_parameters[token] = 0
-					# distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
-					# current_experiment["sequence"]["distribution_parameters"] = distribution_parameters
-
-					# # calculate distribution parameters for each action in the sequence
-					# for sequence_label_range_index in sequence_label_ranges_index:
-					# 	activity_start = int(sequence_label_range_index[0])
-					# 	activity_end = int(sequence_label_range_index[1])
-					# 	activity_id = "{}-{}-{}".format(activity_start, activity_end, sequence_label_range_index[2])
-					# 	discrete_clean_sequence_for_action = discrete_clean_sequence[activity_start:activity_end]
-					# 	discrete_clean_sequence_for_action_pd = pd.Series(discrete_clean_sequence_for_action)
-					# 	distribution_parameters = discrete_clean_sequence_for_action_pd.value_counts(normalize=True, sort=False).to_dict()
-					# 	for token in range(number_of_clusters):
-					# 		if token not in distribution_parameters:
-					# 			distribution_parameters[token] = 0
-					# 	distribution_parameters = collections.OrderedDict(sorted(distribution_parameters.items(), key=lambda t: t[0]))
-					# 	current_experiment["sequence"]["activities"][activity_id] = {}
-					# 	current_experiment["sequence"]["activities"][activity_id]["distribution_parameters"] = distribution_parameters
 
 					# slwe_e parameters
 					for slwe_e_lambda in slwe_e_lambda_list:

@@ -196,7 +196,7 @@ with tqdm(
 					pbar.update()
 
 # overall nr_mae
-fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "paper_single", "HASC_ALL", "pdf")
+fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "paper_single", "arcelik_all", "pdf")
 nr_mae_fig(
 	np.linspace(0,1,21),
 	slwe_e_mae_lists.mean(0),
