@@ -62,8 +62,8 @@ class MovingStatistics(object):
 
 class plot_tools:
 
-	tex_config = {
-		"half": {
+	config = {
+		"latex": {
 			"text.usetex": True,
 			"font.family": "serif",
 			"font.size": 10,
@@ -73,18 +73,6 @@ class plot_tools:
 			"xtick.labelsize": 8,
 			"ytick.labelsize": 8,
 			"figure.titlesize": 8,
-			"figure.facecolor": "#FFFFFF"
-		},
-		"full": {
-			"text.usetex": True,
-			"font.family": "serif",
-			"font.size": 12,
-			"axes.titlesize": 12,
-			"axes.labelsize": 12,
-			"legend.fontsize": 10,
-			"xtick.labelsize": 10,
-			"ytick.labelsize": 10,
-			"figure.titlesize": 10,
 			"figure.facecolor": "#FFFFFF"
 		}
 	}
@@ -108,7 +96,7 @@ class plot_tools:
 		        Dimensions of figure in inches
 		"""
 
-		if width == "default":
+		if width == "vanilla_paper":
 			width_pt = 472.03123
 		elif width == "thesis":
 			# width_pt = 443.57848
