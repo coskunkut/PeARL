@@ -136,8 +136,16 @@ with tqdm(
 				current_experiment["experiment_info"]["seed"] = current_seed
 				current_experiment["preprocessing_info"] = {}
 				current_experiment["parameters"] = {}
-				current_experiment["sequence"] = {}
-				current_experiment["sequence"]["parameters"] = {}
+				current_experiment["sequence"] = {
+					"parameters": {},
+					"raw_clean": [],
+					"discrete_clean": [],
+					"discrete_noisy": [],
+					"hamming_distance": -1,
+					"effective_length": -1,
+					"effective_noise_rate": -1
+				}
+				# current_experiment["sequence"]["parameters"] = {}
 
 				# read raw data
 				X_clean = []
@@ -163,7 +171,10 @@ with tqdm(
 				white_noise = np.zeros(noisy_instance_count)
 				white_noise += current_rng.uniform(bounds[0], bounds[1], noisy_instance_count)
 				X_noisy = np.array(X_clean, copy=True)
-				X_noisy[noisy_instance_indices] += white_noise
+				if batch_config["preprocessing"]["noise_injection"]["injection_policy"] == "add":
+					X_noisy[noisy_instance_indices] += white_noise
+				elif batch_config["preprocessing"]["noise_injection"]["injection_policy"] == "replace":
+					X_noisy[noisy_instance_indices] = white_noise
 				noise_flags = np.zeros([observation_count], dtype=int)
 				noise_flags[noisy_instance_indices] += 1
 
@@ -176,6 +187,7 @@ with tqdm(
 				X_noisy_grouped = decompose_signal(X_noisy, piece_length, False)
 
 				current_experiment["preprocessing_info"]["noise_injection"] = {
+					"injection_policy": batch_config["preprocessing"]["noise_injection"]["injection_policy"],
 					"noise_rate": noise_rate
 				}
 
@@ -196,6 +208,15 @@ with tqdm(
 
 					current_experiment["sequence"]["discrete_clean"] = [str(i) for i in discrete_clean_sequence]
 					current_experiment["sequence"]["discrete_noisy"] = [str(i) for i in discrete_noisy_sequence]
+
+					hamming_distance = np.sum(discrete_clean_sequence != discrete_noisy_sequence).tolist()
+					current_experiment["sequence"]["hamming_distance"] = hamming_distance
+
+					effective_length = len(discrete_clean_sequence)
+					current_experiment["sequence"]["effective_length"] = effective_length
+
+					effective_noise_rate = hamming_distance/effective_length
+					current_experiment["sequence"]["effective_noise_rate"] = effective_noise_rate
 
 					current_experiment["preprocessing_info"]["clustering_config"] = clustering_config
 					current_experiment["preprocessing_info"]["clustering_result"] = {

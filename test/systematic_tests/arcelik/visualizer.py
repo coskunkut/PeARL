@@ -59,16 +59,17 @@ def nr_mae_fig(
 		linestyle = "solid",
 		zorder = 10
 	)
-	ax.plot(
-		noise_rate_list,
-		slwe_e_mae_list,
-		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-		color = "black",
-		alpha = 0.9,
-		linewidth = 1,
-		linestyle = "dashed",
-		zorder = 10
-	)
+	if slwe_e_mae_list is not None:
+		ax.plot(
+			noise_rate_list,
+			slwe_e_mae_list,
+			label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+			color = "black",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "dashed",
+			zorder = 10
+		)
 	ax.plot(
 		noise_rate_list,
 		slwe_t_mae_list,
@@ -202,7 +203,8 @@ with tqdm(
 fig_path = "{}/{}/{}.{}".format(nr_mae_figures_folder_path, "vanilla_paper_1c", "arcelik_all", "pdf")
 nr_mae_fig(
 	np.linspace(0,1,21),
-	slwe_e_mae_lists.mean(0),
+	None,
+	# slwe_e_mae_lists.mean(0),
 	0.9,
 	slwe_t_mae_lists.mean(0),
 	0.99,
