@@ -8,8 +8,9 @@ class Multinomial:
 	# d: duration
 	# n: number of regimes
 
-	def __init__(self, rng_seed):
+	def __init__(self, alp_car, rng_seed):
 		self.set_rng(rng_seed)
+		self.alp_car = alp_car
 		self.reset()
 
 	def set_rng(self, rng_seed):
@@ -20,21 +21,22 @@ class Multinomial:
 		self.p_sequence = []
 		self.p = []
 		self.noise_flags = []
+		self.omega_list = []
+		self.noise_regimes = {}
 
 	# generates P matrix with difference of each consecutive rows controlled
 	# - n: number of rows
-	# - alp_car: alphabet cardinality
 	# - min_diff: minimum value for P[i]-P[i-1]
 	# - max_diff: maximum value for P[i]-P[i-1]
-	def multinomial_p_with_diff(self, n, alp_car, min_diff, max_diff):
-		ps = np.array([]).reshape((0, alp_car))
+	def multinomial_p_with_diff(self, n, min_diff, max_diff):
+		ps = np.array([]).reshape((0, self.alp_car))
 		while ps.shape[0] < n:
 			ok = False
 			not_ok_count = 0
 			while not ok:
 
 				# generate next p
-				p_next = self.rng.dirichlet(np.repeat(1, alp_car))
+				p_next = self.rng.dirichlet(np.repeat(1, self.alp_car))
 
 				# first p is always accepted
 				if ps.shape[0] == 0:
@@ -52,7 +54,7 @@ class Multinomial:
 				else:
 					not_ok_count += 1
 					if not_ok_count > 1000:
-						# ps = np.array([]).reshape((0, alp_car))
+						# ps = np.array([]).reshape((0, self.alp_car))
 						ps = np.delete(ps, -1, 0)
 						# print("NOTOK limit reached.")
 						break
@@ -77,14 +79,31 @@ class Multinomial:
 			self.o_sequence.extend([str(o) for o in subsequence])
 		self.noise_flags.extend(np.zeros(np.sum(d), dtype=int))
 
-	def sudden_drift_diff(self, alp_car, n, d, min_diff, max_diff, append=False):
+	def sudden_drift_diff(self, n, d, min_diff, max_diff, append=False):
 		if not append:
 			self.reset()
-		p = self.multinomial_p_with_diff(n, alp_car, min_diff, max_diff)
+		p = self.multinomial_p_with_diff(n, min_diff, max_diff)
 		self.sudden_drift_pd(p, d, append)
 
+	def noise_sudden_drift(self, n, d, delta_min, delta_max):
+		omega_initial = self.rng.random()
+		omega_list = [omega_initial]
+		for regime_count in range(n):
+			omega_next = self.rng.random()
+			omega_diff = np.abs(omega_next - omega_list[-1])
+			while omega_diff < delta_min or omega_diff > delta_max:
+				omega_next = self.rng.random()
+				omega_diff = np.abs(omega_next - omega_list[-1])
+			omega_list.append(omega_next)
+		for regime_count in range(n):
+			start_index = regime_count * d
+			stop_index = start_index + d
+			# print(start_index, stop_index, omega_list[regime_count])
+			self.noise_regimes["{}_{}".format(start_index, stop_index)] = omega_list[regime_count]
+			self.inject_white_noise(omega_list[regime_count], start_index, stop_index)
+
 	# injects white noise to the sequence with a predetermined rate
-	def inject_white_noise(self, alp_car, noise_rate, start_index=None, stop_index=None):
+	def inject_white_noise(self, noise_rate, start_index=None, stop_index=None):
 		noisy_subsequence = []
 		subsequence_noise_flags = []
 		if start_index is None:
@@ -93,7 +112,7 @@ class Multinomial:
 			stop_index = len(self.o_sequence)
 		for index, token in enumerate(self.o_sequence[start_index:stop_index]):
 			if self.rng.random() <= noise_rate:
-				prime_list = [str(i) for i in range(alp_car) if str(i) != token]
+				prime_list = [str(i) for i in range(self.alp_car) if str(i) != token]
 				noisy_subsequence.append(self.rng.choice(prime_list))
 				subsequence_noise_flags.append(1)
 			else:
