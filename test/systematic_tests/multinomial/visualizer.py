@@ -35,132 +35,241 @@ if not os.path.exists(batch_output_folder_path):
 	sys.exit()
 experiment_files_folder_path = os.path.join(batch_output_folder_path, "experiment_files")
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
+
+# get a sample experiment file to obtain visualization config
+sample_experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_files[0])
+with open(sample_experiment_file_path) as sample_experiment_file:
+	sample_experiment = json.load(sample_experiment_file)
+	plots = sample_experiment["visualization"]["plots"]
+
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
 
 # construct figure folder paths
 figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
-nr_mae_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "nr_mae", remove_existing=True)
-# estimate_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "estimates", remove_existing=True)
-# absolute_error_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "absolute_errors", remove_existing=True)
-# cumulative_error_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "cumulative_errors", remove_existing=True)
-# change_score_figures_folder_path = plot_tools.construct_figure_folder_path(figures_folder_path, "change_scores", remove_existing=True)
 
-# build propery dict for target documents
-target_doc_props = {
-	"paper": {
-		"textwidth": "default",
-		"fr": 0.5,
-		"ar": 1.25,
-		"tex_config": "half"
-	}
-}
-target_doc = "paper"
+for plot_type in plots:
 
-raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
-# print(raw_table)
-# drift_type = raw_table["drift_type"].unique()[0]
-# drift_params = raw_table["drift_params"].unique()[0].replace("/", "_")
-noise_rates = raw_table["noise_rate"].values
-# alp_car = raw_table["alp_car"].unique()[0]
+	# initialize directory
+	current_figures_folder_path = plot_tools.construct_figure_folder_path(
+		figures_folder_path,
+		plot_type,
+		remove_existing=True
+	)
 
-total_number_of_figs = 1
+	if plot_type == "mae_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "default",
+				"fr": 0.5,
+				"ar": 1.25,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
 
-with tqdm(
-	total = total_number_of_figs,
-	position = 0,
-	leave = True,
-	desc = "visualize".ljust(10),
-	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
-	ascii = True
-	) as pbar:
+		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
+		noise_rates = raw_table["noise_rate"].values
 
-	# matplotlib config
-	plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+		slwe_e_lambda = 0.9
+		slwe_t_lambda = 0.99
+		slwe_e_mae_list = raw_table["SLWE (E)"].values
+		slwe_t_mae_list = raw_table["SLWE (T)"].values
+		slwe_p_a_mae_list = raw_table["SLWE-PA"].values
+		slwe_p_e_mae_list = raw_table["SLWE-PE"].values
 
-	# different line styles for each curve
-	# linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
-	# plt.rc("axes", prop_cycle=linestyle_cycler)
-
-	slwe_e_lambda = 0.9
-	slwe_t_lambda = 0.99
-
-	slwe_e_mae_list = raw_table["SLWE (E)"].values
-	slwe_t_mae_list = raw_table["SLWE (T)"].values
-	slwe_p_a_mae_list = raw_table["SLWE-PA"].values
-	slwe_p_e_mae_list = raw_table["SLWE-PE"].values
-
-	# generate figure for current experiment (estimates)
-	fig, ax = plt.subplots(
-		nrows = 1,
-		ncols = 1,
-		figsize = plot_tools.set_size(
-			width = target_doc_props[target_doc]["textwidth"],
-			aspect_ratio = target_doc_props[target_doc]["ar"],
-			fraction = target_doc_props[target_doc]["fr"]
+		# generate figure for current experiment (estimates)
+		fig, ax = plt.subplots(
+			nrows = 1,
+			ncols = 1,
+			figsize = plot_tools.set_size(
+				width = target_doc_props[target_doc]["textwidth"],
+				aspect_ratio = target_doc_props[target_doc]["ar"],
+				fraction = target_doc_props[target_doc]["fr"]
+			)
 		)
-	)
-	fig.set_tight_layout(True)
+		fig.set_tight_layout(True)
 
-	ax.plot(
-		noise_rates,
-		slwe_p_a_mae_list,
-		label = "SLWE-PA",
-		color = "black",
-		alpha = 0.9,
-		linewidth = 1,
-		linestyle = "solid",
-		zorder = 10
-	)
-	ax.plot(
-		noise_rates,
-		slwe_p_e_mae_list,
-		label = "SLWE-PE",
-		color = "maroon",
-		alpha = 0.9,
-		linewidth = 1,
-		linestyle = "solid",
-		zorder = 10
-	)
-	ax.plot(
-		noise_rates,
-		slwe_e_mae_list,
-		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-		color = "black",
-		alpha = 0.9,
-		linewidth = 1,
-		linestyle = "dashed",
-		zorder = 10
-	)
-	ax.plot(
-		noise_rates,
-		slwe_t_mae_list,
-		label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-		color = "black",
-		alpha = 0.9,
-		linewidth = 1,
-		linestyle = "dotted",
-		zorder = 10
-	)
+		ax.plot(
+			noise_rates,
+			slwe_p_a_mae_list,
+			label = "SLWE-PA",
+			color = "black",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "solid",
+			zorder = 10
+		)
+		ax.plot(
+			noise_rates,
+			slwe_p_e_mae_list,
+			label = "SLWE-PE",
+			color = "maroon",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "solid",
+			zorder = 10
+		)
+		ax.plot(
+			noise_rates,
+			slwe_e_mae_list,
+			label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+			color = "black",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "dashed",
+			zorder = 10
+		)
+		ax.plot(
+			noise_rates,
+			slwe_t_mae_list,
+			label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+			color = "black",
+			alpha = 0.9,
+			linewidth = 1,
+			linestyle = "dotted",
+			zorder = 10
+		)
 
-	ax.set_xlabel("Noise Rate ($\omega$)")
-	# ax.set_xlim(0, 1)
-	ax.set_xticks(np.linspace(0, 1, num=11))
-	# ax.set_ylim(0, 0.4)
-	# ax.set_ylim(0)
-	ax.set_ylabel("MAE")
-	ax.grid(linestyle="dashed", alpha=0.5)
-	ax.legend(loc="upper left")
+		ax.set_xlabel("Noise Rate ($\omega$)")
+		# ax.set_xlim(0, 1)
+		ax.set_xticks(np.linspace(0, 1, num=11))
+		# ax.set_ylim(0, 0.4)
+		# ax.set_ylim(0)
+		ax.set_ylabel("MAE")
+		ax.grid(linestyle="dashed", alpha=0.5)
+		ax.legend(loc="upper left")
 
-	# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
-	fig_name = "nr_mae".format()
-	fig.savefig(
-		"{}/{}.{}".format(nr_mae_figures_folder_path, fig_name, "pdf"),
-		bbox_inches = "tight",
-		pad_inches = 0.05
-	)
-	plt.close()
+		# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
+		fig_name = "mae_omega".format()
+		fig.savefig(
+			"{}/{}.{}".format(mae_omega_figures_folder_path, fig_name, "pdf"),
+			bbox_inches = "tight",
+			pad_inches = 0.05
+		)
+		plt.close()
 
-	# plt.show()
+	elif plot_type == "mae_time_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "vanilla_paper",
+				"fr": 1,
+				"ar": 2.5,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
 
-	pbar.update()
+		for experiment_file in experiment_files:
+			# read experiment file as JSON
+			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
+			with open(experiment_file_path) as current_experiment_file:
+				current_experiment = json.load(current_experiment_file)
+
+			# generate figure for current experiment (estimates)
+			fig, ax1 = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = plot_tools.set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax2 = ax1.twinx()
+
+			omega_all = []
+			for start_end_str, omega in current_experiment["sequence_info"]["noise"]["noise_regimes"].items():
+				start, end = [int(t) for t in start_end_str.split("_")]
+				omega_all.extend(np.repeat(omega, end-start).tolist())
+
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+			
+			ax1.plot(
+				current_experiment["results"]["slwe_e"]["ae"],
+				label = "SLWE (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_e"]["mae"]),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_t"]["ae"],
+				label = "SLWE (T) (MAE: {:.2f})".format(current_experiment["results"]["slwe_t"]["mae"]),
+				color = "green",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_p_e"]["ae"],
+				label = "SLWE-P (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_p_e"]["mae"]),
+				color = "blue",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+
+			p_change_points = []
+			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
+			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
+			for regime_count in range(p_drift_n):
+				change_point = (regime_count+1) * p_drift_d
+				p_change_points.append(change_point)
+				ax1.axvline(
+					x = change_point,
+					# label = "$P$ Change Point",
+					color = "black",
+					alpha = 0.9,
+					linewidth = 0.5,
+					linestyle = "dashed",
+					zorder = 10
+				)
+			ax1.set_xticks(p_change_points)
+
+			ax1.set_xlabel("Observation Count")
+			ax1.set_ylabel("Absolute Error")
+			ax2.set_ylabel("Noise Rate ($\omega$)")
+
+			ax1.set_xlim(0, p_drift_n * p_drift_d)
+			ax2.set_ylim(0, 1)
+
+			ax1.grid(linestyle="dashed", alpha=0.5)
+			ax1.legend(loc="upper left")
+			ax2.legend(loc="upper right")
+
+			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()
+
+
+# total_number_of_figs = 1
+# with tqdm(
+# 	total = total_number_of_figs,
+# 	position = 0,
+# 	leave = True,
+# 	desc = "visualize".ljust(10),
+# 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
+# 	ascii = True
+# 	) as pbar:
+
+	# pbar.update()

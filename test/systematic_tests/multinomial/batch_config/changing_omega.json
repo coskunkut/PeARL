@@ -1,0 +1,66 @@
+{
+	"exp_type": "changing_omega",
+	"sequence_info": {
+		"alphabet_cardinality": 4,
+		"p_drift": {
+			"sudden": {
+				"frequency": {
+					"n": 5,
+					"d": 600
+				},
+				"severity": {
+					"min": 0.4,
+					"max": 1
+				}
+			}
+		},
+		"noise": {
+			"injection_type": "add",
+			"noise_drift": {
+				"sudden": {
+					"frequency": {
+						"n": 10,
+						"d": 300
+					},
+					"severity": {
+						"min": 0,
+						"max": 0.5
+					}
+				}
+			}
+		}
+	},
+	"algorithms_to_run": ["slwe_e", "slwe_t", "slwe_p_a", "slwe_p_e"],
+	"parameters": {
+		"experiment": {
+			"number_of_runs": 10
+		},
+		"slwe_e": {
+			"lambda": 0.9
+		},
+		"slwe_t": {
+			"lambda": 0.99
+		},
+		"slwe_p_a": {
+			"eta": {
+				"min": 0.01,
+				"max": 0.1
+			},
+			"rho_eta_mapping": "avg_linear",
+			"k": 5,
+			"L": 15
+		},
+		"slwe_p_e": {
+			"eta": {
+				"min": 0.01,
+				"max": 0.1
+			},
+			"rho_eta_mapping": "event_linear",
+			"k": 5,
+			"L": 15
+		}
+	},
+	"visualization": {
+		"plots": ["mae_time_omega"]
+	}
+}
