@@ -60,7 +60,7 @@ for plot_type in plots:
 	if plot_type == "mae_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "default",
+				"textwidth": "vanilla_paper",
 				"fr": 0.5,
 				"ar": 1.25,
 				"tex_config": "latex"
@@ -144,7 +144,7 @@ for plot_type in plots:
 		# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
 		fig_name = "mae_omega".format()
 		fig.savefig(
-			"{}/{}.{}".format(mae_omega_figures_folder_path, fig_name, "pdf"),
+			"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
 			bbox_inches = "tight",
 			pad_inches = 0.05
 		)

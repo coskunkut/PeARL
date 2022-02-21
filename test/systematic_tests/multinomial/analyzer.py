@@ -28,11 +28,12 @@ experiment_files_folder_path = os.path.join(batch_output_folder_path, "experimen
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 
-# get a sample experiment file to obtain the list of algorithms run
+# get a sample experiment file to obtain preliminary info
 sample_experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_files[0])
 with open(sample_experiment_file_path) as sample_experiment_file:
 	sample_experiment = json.load(sample_experiment_file)
 	algorithms_to_run = sample_experiment["algorithms_to_run"]
+	exp_type = sample_experiment["experiment_info"]["type"]
 
 # prepare column names of the log file
 fieldnames = [
@@ -40,9 +41,20 @@ fieldnames = [
 	"exp_seed",
 	"exp_name",
 	"alp_car",
-	"p_drift_params",
-	"noise_drift_params"
+	"p_drift_params"
 ]
+
+# exp type dependent field names
+if exp_type == "fixed_omega":
+	fieldnames.extend([
+		"noise_rate"
+	])
+elif exp_type == "changing_omega":
+	fieldnames.extend([
+		"noise_drift_params"
+	])
+
+# algorithm dependent field names
 if "slwe_e" in algorithms_to_run:
 	fieldnames.extend([
 		"slwe_e_lambda",
@@ -94,7 +106,7 @@ for experiment_file in tqdm(
 	alp_car = current_experiment["sequence_info"]["alphabet_cardinality"]
 	regime_parameters = current_experiment["sequence_info"]["regime_parameters"]
 	p_drift_type = current_experiment["sequence_info"]["p_drift"]["type"]
-	n_drift_type = current_experiment["sequence_info"]["noise"]["drift_type"]
+	
 
 	if p_drift_type == "sudden":
 		p_drift_params = "{}/{}/{}/{}".format(
@@ -104,13 +116,15 @@ for experiment_file in tqdm(
 			current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["max"]
 		)
 
-	if n_drift_type == "sudden":
-		n_drift_params = "{}/{}/{}/{}".format(
-			current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"],
-			current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"],
-			current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["min"],
-			current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["max"]
-		)
+	if exp_type == "changing_omega":
+		n_drift_type = current_experiment["sequence_info"]["noise"]["drift_type"]
+		if n_drift_type == "sudden":
+			n_drift_params = "{}/{}/{}/{}".format(
+				current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"],
+				current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"],
+				current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["min"],
+				current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["max"]
+			)
 	
 	# build result dictionary for current run
 	run_result_dict = {
@@ -119,8 +133,12 @@ for experiment_file in tqdm(
 		"exp_name": current_experiment["experiment_info"]["name"],
 		"alp_car": current_experiment["sequence_info"]["alphabet_cardinality"],
 		"p_drift_params": p_drift_params,
-		"noise_drift_params": n_drift_params
 	}
+
+	if exp_type == "fixed_omega":
+		run_result_dict["noise_rate"] = current_experiment["sequence_info"]["noise"]["noise_rate"]
+	elif exp_type == "changing_omega":
+		run_result_dict["noise_drift_params"] = n_drift_params
 
 	parameter_sequence = current_experiment["sequence_info"]["p_sequence"]
 

@@ -45,7 +45,7 @@ if not os.path.exists(experiment_files_folder_path):
 else:
 	experiment_files = glob.glob("{}/*.json".format(experiment_files_folder_path))
 	for experiment_file in experiment_files:
-	    os.remove(experiment_file)
+		os.remove(experiment_file)
 
 # initialize rng
 default_seed = 1123
@@ -72,7 +72,11 @@ if p_drift_type == "sudden":
 # noise
 injection_type = batch_config["sequence_info"]["noise"]["injection_type"]
 if exp_type == "fixed_omega":
-	noise_rate_list = batch_config["sequence_info"]["noise_rate"]
+	start = batch_config["sequence_info"]["noise"]["noise_rates"]["start"]
+	stop = batch_config["sequence_info"]["noise"]["noise_rates"]["stop"]
+	step = batch_config["sequence_info"]["noise"]["noise_rates"]["step"]
+	num = int(((stop - start) / step) + 1)
+	noise_rate_list = np.linspace(start, stop, num)
 elif exp_type == "changing_omega":
 	n_drift_type = list(batch_config["sequence_info"]["noise"]["noise_drift"].keys())[0]
 	if n_drift_type == "sudden":
@@ -173,79 +177,29 @@ with tqdm(
 
 		if exp_type == "fixed_omega":
 			for noise_rate in noise_rate_list:
-
-				current_experiment["sequence_info"]["noise_rate"] = noise_rate
 				
 				# sequence parameters
-				if drift_type == "sudden":
-					frequency = batch_config["sequence_info"]["drift_type"]["sudden"]["frequency"]
-					severity = batch_config["sequence_info"]["drift_type"]["sudden"]["severity"]
-					n, d = frequency["n"], frequency["d"]
-					min_diff, max_diff = severity["min"], severity["max"]
-					multinomial_ins = Multinomial(current_seed)
-					multinomial_ins.sudden_drift_diff(alp_car, n, d, min_diff, max_diff)
-					multinomial_ins.inject_white_noise(alp_car, noise_rate)
-					current_experiment["sequence_info"]["drift_type"] = "sudden"
-					current_experiment["sequence_info"]["drift_params"] = {}
-					current_experiment["sequence_info"]["drift_params"]["n"] = n
-					current_experiment["sequence_info"]["drift_params"]["d"] = d
-					current_experiment["sequence_info"]["drift_params"]["p_diff_min"] = min_diff
-					current_experiment["sequence_info"]["drift_params"]["p_diff_max"] = max_diff
+				if p_drift_type == "sudden":
+					multinomial_ins = Multinomial(alp_car, current_seed)
+					multinomial_ins.sudden_drift_diff(p_drift_n, p_drift_d, p_drift_min_diff, p_drift_max_diff)
+					multinomial_ins.inject_white_noise(noise_rate)
+
+					current_experiment["sequence_info"]["p_drift"]["type"] = p_drift_type
+					current_experiment["sequence_info"]["p_drift"]["params"] = {
+						"frequency": p_drift_frequency,
+						"severity": p_drift_severity
+					}
+
+					current_experiment["sequence_info"]["noise"]["injection_type"] = injection_type
+					current_experiment["sequence_info"]["noise"]["noise_rate"] = noise_rate
+
 					current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
-					# current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
 					current_experiment["sequence_info"]["sequence"] = list(map(str, multinomial_ins.o_sequence))
 					current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
+					
 					experiment_name = "exp_{}".format(experiment_file_count)
 					current_experiment["experiment_info"]["name"] = experiment_name
 					experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
 					dump_json(current_experiment, experiment_file_path)
 					experiment_file_count += 1
 					pbar.update()
-
-			# elif drift_type == "mixed":
-
-			# 	small_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["small_sudden"]
-			# 	large_sudden = batch_config["sequence_info"]["drift_type"]["mixed"]["large_sudden"]
-			# 	multinomial_ins = Multinomial(current_seed)
-
-			# 	# small sudden
-			# 	multinomial_ins.sudden_drift_diff(
-			# 		alp_car, 
-			# 		small_sudden["n"], 
-			# 		small_sudden["d"], 
-			# 		small_sudden["min"], 
-			# 		small_sudden["max"],
-			# 		append = False
-			# 	)
-
-			# 	# large sudden
-			# 	multinomial_ins.sudden_drift_diff(
-			# 		alp_car, 
-			# 		large_sudden["n"], 
-			# 		large_sudden["d"], 
-			# 		large_sudden["min"], 
-			# 		large_sudden["max"],
-			# 		append = True
-			# 	)
-
-			# 	current_experiment["sequence_info"]["drift_type"] = "mixed"
-			# 	current_experiment["sequence_info"]["drift_params"] = {}
-			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"] = {}
-			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["n"] = small_sudden["n"]
-			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["d"] = small_sudden["d"]
-			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_min"] = small_sudden["min"]
-			# 	current_experiment["sequence_info"]["drift_params"]["small_sudden"]["p_diff_max"] = small_sudden["max"]
-			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"] = {}
-			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["n"] = large_sudden["n"]
-			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["d"] = large_sudden["d"]
-			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_min"] = large_sudden["min"]
-			# 	current_experiment["sequence_info"]["drift_params"]["large_sudden"]["p_diff_max"] = large_sudden["max"]
-			# 	current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
-			# 	current_experiment["sequence_info"]["sequence"] = multinomial_ins.sequence
-			# 	current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
-			# 	experiment_name = "exp_{}".format(experiment_file_count)
-			# 	current_experiment["experiment_info"]["name"] = experiment_name
-			# 	experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
-			# 	dump_json(current_experiment, experiment_file_path)
-			# 	experiment_file_count += 1
-			# 	pbar.update()

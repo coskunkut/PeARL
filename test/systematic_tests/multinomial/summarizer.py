@@ -28,7 +28,7 @@ result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
 # read csv to a pandas dataframe
 raw_table = pd.read_csv(run_logs_path, sep=",", index_col=False)
 
-drift_type = raw_table["drift_type"].unique()[0]
+# drift_type = raw_table["drift_type"].unique()[0]
 algorithms_to_run = raw_table.columns[raw_table.columns.str.endswith("_mae")]
 algorithms_to_run = [alg[:-4] for alg in algorithms_to_run]
 
@@ -39,8 +39,7 @@ summary_table_columns = [
 	"noise_rate"
 ]
 group_by_filter = [
-	"drift_type",
-	"drift_params",
+	"p_drift_params",
 	"alp_car",
 	"noise_rate"
 ]
