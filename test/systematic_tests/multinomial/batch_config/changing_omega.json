@@ -61,6 +61,6 @@
 		}
 	},
 	"visualization": {
-		"plots": ["mae_time_omega"]
+		"plots": ["ae_time_omega", "cae_time_omega"]
 	}
 }
