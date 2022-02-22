@@ -57,6 +57,9 @@ for plot_type in plots:
 		remove_existing=True
 	)
 
+	slwe_e_lambda = 0.9
+	slwe_t_lambda = 0.99
+
 	if plot_type == "mae_omega":
 		target_doc_props = {
 			"vanilla_paper": {
@@ -72,8 +75,6 @@ for plot_type in plots:
 		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
 		noise_rates = raw_table["noise_rate"].values
 
-		slwe_e_lambda = 0.9
-		slwe_t_lambda = 0.99
 		slwe_e_mae_list = raw_table["SLWE (E)"].values
 		slwe_t_mae_list = raw_table["SLWE (T)"].values
 		slwe_p_a_mae_list = raw_table["SLWE-PA"].values
@@ -95,7 +96,7 @@ for plot_type in plots:
 			noise_rates,
 			slwe_p_a_mae_list,
 			label = "SLWE-PA",
-			color = "black",
+			color = "darkgreen",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -154,8 +155,8 @@ for plot_type in plots:
 		target_doc_props = {
 			"vanilla_paper": {
 				"textwidth": "vanilla_paper",
-				"fr": 1,
-				"ar": 2.5,
+				"fr": 0.5,
+				"ar": 1.25,
 				"tex_config": "latex"
 			}
 		}
@@ -199,8 +200,8 @@ for plot_type in plots:
 			
 			ax1.plot(
 				current_experiment["results"]["slwe_e"]["ae"],
-				label = "SLWE (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_e"]["mae"]),
-				color = "black",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "darkgray",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
@@ -208,8 +209,8 @@ for plot_type in plots:
 			)
 			ax1.plot(
 				current_experiment["results"]["slwe_t"]["ae"],
-				label = "SLWE (T) (MAE: {:.2f})".format(current_experiment["results"]["slwe_t"]["mae"]),
-				color = "green",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "darkgreen",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
@@ -217,29 +218,29 @@ for plot_type in plots:
 			)
 			ax1.plot(
 				current_experiment["results"]["slwe_p_e"]["ae"],
-				label = "SLWE-P (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_p_e"]["mae"]),
-				color = "blue",
+				label = "SLWE-PE",
+				color = "black",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
 				zorder = 10
 			)
 
-			p_change_points = []
+			p_change_points = [0]
 			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
 			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
 			for regime_count in range(p_drift_n):
 				change_point = (regime_count+1) * p_drift_d
 				p_change_points.append(change_point)
-				ax1.axvline(
-					x = change_point,
-					# label = "$P$ Change Point",
-					color = "black",
-					alpha = 0.9,
-					linewidth = 0.5,
-					linestyle = "dashed",
-					zorder = 10
-				)
+				# ax1.axvline(
+				# 	x = change_point,
+				# 	# label = "$P$ Change Point",
+				# 	color = "black",
+				# 	alpha = 0.5,
+				# 	linewidth = 0.5,
+				# 	linestyle = "dashed",
+				# 	zorder = 10
+				# )
 			ax1.set_xticks(p_change_points)
 
 			ax1.set_xlabel("Observation Count")
@@ -250,8 +251,8 @@ for plot_type in plots:
 			ax2.set_ylim(0, 1)
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
-			ax1.legend(loc="upper left")
-			ax2.legend(loc="upper right")
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
 
 			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
 			fig.savefig(
@@ -265,8 +266,8 @@ for plot_type in plots:
 		target_doc_props = {
 			"vanilla_paper": {
 				"textwidth": "vanilla_paper",
-				"fr": 1,
-				"ar": 2.5,
+				"fr": 0.5,
+				"ar": 1.25,
 				"tex_config": "latex"
 			}
 		}
@@ -311,7 +312,7 @@ for plot_type in plots:
 			
 			ax1.plot(
 				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
-				label = "SLWE (E)",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
 				color = "black",
 				alpha = 0.9,
 				linewidth = 1.0,
@@ -320,7 +321,7 @@ for plot_type in plots:
 			)
 			ax1.plot(
 				np.cumsum(current_experiment["results"]["slwe_t"]["ae"]),
-				label = "SLWE (T)",
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
 				color = "black",
 				alpha = 0.9,
 				linewidth = 1.0,
@@ -329,7 +330,7 @@ for plot_type in plots:
 			)
 			ax1.plot(
 				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
-				label = "SLWE-P (E)",
+				label = "SLWE-PE",
 				color = "black",
 				alpha = 0.9,
 				linewidth = 1.0,
@@ -337,33 +338,33 @@ for plot_type in plots:
 				zorder = 10
 			)
 
-			p_change_points = []
+			p_change_points = [0]
 			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
 			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
 			for regime_count in range(p_drift_n):
 				change_point = (regime_count+1) * p_drift_d
 				p_change_points.append(change_point)
-				ax1.axvline(
-					x = change_point,
-					# label = "$P$ Change Point",
-					color = "black",
-					alpha = 0.9,
-					linewidth = 0.5,
-					linestyle = "dashed",
-					zorder = 10
-				)
+				# ax1.axvline(
+				# 	x = change_point,
+				# 	# label = "$P$ Change Point",
+				# 	color = "black",
+				# 	alpha = 0.9,
+				# 	linewidth = 0.5,
+				# 	linestyle = "dashed",
+				# 	zorder = 10
+				# )
 			ax1.set_xticks(p_change_points)
 
 			ax1.set_xlabel("Observation Count")
-			ax1.set_ylabel("Cumulative Absolute Error (CAE)")
+			ax1.set_ylabel("CAE")
 			ax2.set_ylabel("Noise Rate ($\omega$)")
 
 			ax1.set_xlim(0, p_drift_n * p_drift_d)
 			ax2.set_ylim(0, 1)
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
-			ax1.legend(loc="upper left")
-			ax2.legend(loc="upper right")
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
 
 			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
 			fig.savefig(
