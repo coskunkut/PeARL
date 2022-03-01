@@ -20,6 +20,12 @@ def decompose_signal(data, piece_length, overlap):
 		time_series_pieces = list(grouper(data, piece_length, 0))
 	return time_series_pieces
 
+# calculates the difference between clean and noisy sequence, returns estimated noise rate
+def get_effective_noise_rate(clean_sequence, noisy_sequence):
+	sequence_diff = np.subtract(clean_sequence, noisy_sequence)
+	diff_count = np.count_nonzero(sequence_diff == 0)
+	return 1 - (diff_count / len(clean_sequence))
+
 # efficient calculation of moving statistics
 class MovingStatistics(object):
 
