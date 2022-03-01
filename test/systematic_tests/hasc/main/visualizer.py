@@ -77,15 +77,10 @@ def nr_mae_fig(
 	fig.savefig(fig_path, bbox_inches="tight", pad_inches=0.05)
 	plt.close()
 
-# get sequence id
+# get batch id
 sequence_ids = []
 if len(sys.argv) == 2:
 	batch_id = sys.argv[1]
-	sequence_ids = ["HASC{}".format(i) for i in range(1001, 1019)]
-elif len(sys.argv) >= 3:
-	batch_id = sys.argv[1]
-	for sequence_id in sys.argv[2:]:
-		sequence_ids.append("HASC{}".format(sequence_id))
 else:
 	sys.exit()
 
@@ -100,19 +95,334 @@ experiment_files_folder_path = os.path.join(batch_output_folder_path, "experimen
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 
+# get a sample experiment file to obtain visualization config
+sample_experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_files[0])
+with open(sample_experiment_file_path) as sample_experiment_file:
+	sample_experiment = json.load(sample_experiment_file)
+	plots = sample_experiment["visualization"]["plots"]
+
+run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
+result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
+
+# construct figure folder paths
+figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
+
+for plot_type in plots:
+
+	# initialize directory
+	current_figures_folder_path = plot_tools.construct_figure_folder_path(
+		figures_folder_path,
+		plot_type,
+		remove_existing=True
+	)
+
+	slwe_e_lambda = 0.9
+	slwe_t_lambda = 0.99
+
+	if plot_type == "mae_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "vanilla_paper",
+				"fr": 0.5,
+				"ar": 1.25,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+
+		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
+
+		sequence_id_list = raw_table["sequence_id"].unique()
+		for sequence_id in sequence_id_list:
+			filtered_table = raw_table.loc[(raw_table["sequence_id"] == sequence_id)]
+			# print(filtered_table)
+			noise_rates = filtered_table["noise_rate"].values
+			slwe_e_mae_list = filtered_table["SLWE (E)"].values
+			slwe_t_mae_list = filtered_table["SLWE (T)"].values
+			slwe_p_a_mae_list = filtered_table["SLWE-PA"].values
+			slwe_p_e_mae_list = filtered_table["SLWE-PE"].values
+
+			# generate figure for current experiment (estimates)
+			fig, ax = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = plot_tools.set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax.plot(
+				noise_rates,
+				slwe_p_a_mae_list,
+				label = "SLWE-PA",
+				color = "darkgreen",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax.plot(
+				noise_rates,
+				slwe_p_e_mae_list,
+				label = "SLWE-PE",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax.plot(
+				noise_rates,
+				slwe_e_mae_list,
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "dashed",
+				zorder = 10
+			)
+			ax.plot(
+				noise_rates,
+				slwe_t_mae_list,
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "dotted",
+				zorder = 10
+			)
+
+			ax.set_xlabel("Noise Rate ($\omega$)")
+			# ax.set_xlim(0, 1)
+			ax.set_xticks(np.linspace(0, 1, num=11))
+			# ax.set_ylim(0, 0.4)
+			# ax.set_ylim(0)
+			ax.set_ylabel("MAE")
+			ax.grid(linestyle="dashed", alpha=0.5)
+			ax.legend(loc="upper left")
+
+			# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
+			fig_name = "{}".format(sequence_id)
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()
+
+	elif plot_type == "ae_time_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "vanilla_paper",
+				"fr": 0.5,
+				"ar": 1.25,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+
+		for experiment_file in experiment_files:
+			# read experiment file as JSON
+			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
+			with open(experiment_file_path) as current_experiment_file:
+				current_experiment = json.load(current_experiment_file)
+
+			# generate figure for current experiment (estimates)
+			fig, ax1 = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = plot_tools.set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax2 = ax1.twinx()
+
+			omega_all = []
+			for start_end_str, omega in current_experiment["preprocessing"]["noise"]["noise_regimes"].items():
+				start, end = [int(t) for t in start_end_str.split("_")]
+				omega_all.extend(np.repeat(omega, end-start).tolist())
+
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+			
+			ax1.plot(
+				current_experiment["results"]["slwe_e"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "darkgray",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_t"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "darkgreen",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_p_e"]["ae"],
+				label = "SLWE-PE",
+				color = "black",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 10
+			)
+
+			p_change_points = current_experiment["sequence"]["change_points"]
+			ax1.set_xticks(p_change_points)
+
+			ax1.set_xlabel("Observation Count")
+			ax1.set_ylabel("Absolute Error")
+			ax2.set_ylabel("Noise Rate ($\omega$)")
+
+			ax1.set_xlim(0, len(omega_all))
+			ax2.set_ylim(0, 1)
+
+			ax1.grid(linestyle="dashed", alpha=0.5)
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
+
+			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()
+
+	elif plot_type == "cae_time_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "vanilla_paper",
+				"fr": 0.5,
+				"ar": 1.25,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+
+		for experiment_file in experiment_files:
+
+			# read experiment file as JSON
+			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
+			with open(experiment_file_path) as current_experiment_file:
+				current_experiment = json.load(current_experiment_file)
+
+			# generate figure for current experiment (estimates)
+			fig, ax1 = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = plot_tools.set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax2 = ax1.twinx()
+
+			omega_all = []
+			for start_end_str, omega in current_experiment["preprocessing"]["noise"]["noise_regimes"].items():
+				start, end = [int(t) for t in start_end_str.split("_")]
+				omega_all.extend(np.repeat(omega, end-start).tolist())
+
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+			
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dashed",
+				zorder = 10
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_t"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dotted",
+				zorder = 10
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				label = "SLWE-PE",
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "solid",
+				zorder = 10
+			)
+
+			p_change_points = current_experiment["sequence"]["change_points"]
+			ax1.set_xticks(p_change_points)
+
+			ax1.set_xlabel("Observation Count")
+			ax1.set_ylabel("CAE")
+			ax2.set_ylabel("Noise Rate ($\omega$)")
+
+			ax1.set_xlim(0, len(omega_all))
+			ax2.set_ylim(0, 1)
+
+			ax1.grid(linestyle="dashed", alpha=0.5)
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
+
+			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()
+
+exit()
 # build propery dict for target documents
 target_doc_props = {
 	"paper_double": {
-		"textwidth": "default",
+		"textwidth": "vanilla_paper",
 		"fr": 0.5,
 		"ar": 1.25,
-		"tex_config": "half"
+		"tex_config": "latex"
 	},
 	"paper_single": {
-		"textwidth": "default",
+		"textwidth": "vanilla_paper",
 		"fr": 1,
 		"ar": 2.25,
-		"tex_config": "full"
+		"tex_config": "latex"
 	}
 }
 
@@ -153,7 +463,7 @@ with tqdm(
 	for target_doc in target_doc_props.keys():
 
 		# matplotlib config
-		plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
 
 		# different line styles for each curve
 		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
