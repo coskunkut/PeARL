@@ -116,14 +116,15 @@ for experiment_file in tqdm(
 			current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["max"]
 		)
 
+	# TODO: CHECK THIS
 	if exp_type == "changing_omega":
 		n_drift_type = current_experiment["sequence_info"]["noise"]["drift_type"]
 		if n_drift_type == "sudden":
 			n_drift_params = "{}/{}/{}/{}".format(
-				current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"],
-				current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"],
-				current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["min"],
-				current_experiment["sequence_info"]["p_drift"]["params"]["severity"]["max"]
+				current_experiment["sequence_info"]["noise"]["drift_params"]["frequency"]["n"],
+				current_experiment["sequence_info"]["noise"]["drift_params"]["frequency"]["d"],
+				current_experiment["sequence_info"]["noise"]["drift_params"]["severity"]["min"],
+				current_experiment["sequence_info"]["noise"]["drift_params"]["severity"]["max"]
 			)
 	
 	# build result dictionary for current run
