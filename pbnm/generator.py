@@ -132,6 +132,29 @@ class Multinomial:
 		diff_count = np.count_nonzero(sequence_diff == 0)
 		return 1 - (diff_count / self.sequence_length)
 
+	# HASC
+
+	# generates noise regimes
+	def generate_noise_regimes(self, sequence_length, regime_length, delta_min, delta_max):
+		omega_initial = self.rng.random()
+		omega_list = [omega_initial]
+		number_of_regimes = int(np.ceil(sequence_length / regime_length))
+		noise_regimes = {}
+		for regime_count in range(number_of_regimes):
+			omega_next = self.rng.random()
+			omega_diff = np.abs(omega_next - omega_list[-1])
+			while omega_diff < delta_min or omega_diff > delta_max:
+				omega_next = self.rng.random()
+				omega_diff = np.abs(omega_next - omega_list[-1])
+			omega_list.append(omega_next)
+		for regime_count in range(number_of_regimes):
+			start_index = regime_count * regime_length
+			stop_index = start_index + regime_length
+			if stop_index > sequence_length:
+				stop_index = sequence_length
+			noise_regimes["{}_{}".format(start_index, stop_index)] = omega_list[regime_count]
+		return noise_regimes
+
 	# # generates a non-stationarity sequence using the regime information
 	# def generate_clean_sequence (self, p, d):
 	# 	self.p = p
