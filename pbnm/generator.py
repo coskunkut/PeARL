@@ -135,16 +135,16 @@ class Multinomial:
 	# HASC
 
 	# generates noise regimes
-	def generate_noise_regimes(self, sequence_length, regime_length, delta_min, delta_max):
-		omega_initial = self.rng.random()
+	def generate_noise_regimes(self, sequence_length, regime_length, delta_min, delta_max, omega_min=0, omega_max=1):
+		omega_initial = self.rng.uniform(omega_min, omega_max)
 		omega_list = [omega_initial]
 		number_of_regimes = int(np.ceil(sequence_length / regime_length))
 		noise_regimes = {}
 		for regime_count in range(number_of_regimes):
-			omega_next = self.rng.random()
+			omega_next = self.rng.uniform(omega_min, omega_max)
 			omega_diff = np.abs(omega_next - omega_list[-1])
 			while omega_diff < delta_min or omega_diff > delta_max:
-				omega_next = self.rng.random()
+				omega_next = self.rng.uniform(omega_min, omega_max)
 				omega_diff = np.abs(omega_next - omega_list[-1])
 			omega_list.append(omega_next)
 		for regime_count in range(number_of_regimes):
