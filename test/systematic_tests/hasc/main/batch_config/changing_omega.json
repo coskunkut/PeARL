@@ -9,8 +9,8 @@
 					"HASC1001": 4,
 					"HASC1002": 5,
 					"HASC1003": 4,
-					"HASC1004": 6,
-					"HASC1005": 6,
+					"HASC1004": 16,
+					"HASC1005": 16,
 					"HASC1006": 8,
 					"HASC1007": 7,
 					"HASC1008": 5,
@@ -45,7 +45,7 @@
 	"algorithms_to_run": ["slwe_e", "slwe_t", "slwe_p_a", "slwe_p_e"],
 	"parameters": {
 		"experiment": {
-			"number_of_runs": 2
+			"number_of_runs": 50
 		},
 		"slwe_e": {
 			"lambda": 0.9
