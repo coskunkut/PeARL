@@ -206,10 +206,12 @@ with tqdm(
 					# generate noise regimes
 					multinomial_ins = Multinomial(alp_car, current_seed)
 					noise_regimes = multinomial_ins.generate_noise_regimes(
-						observation_count,
-						n_drift_d,
-						n_drift_min_diff,
-						n_drift_max_diff
+						sequence_length = observation_count,
+						regime_length = n_drift_d,
+						delta_min = n_drift_min_diff,
+						delta_max = n_drift_max_diff,
+						omega_min = 0.2,
+						omega_max = 0.75
 					)
 					for noise_regime_bounds, noise_regime_omega in noise_regimes.items():
 						start, end = [int(bound) for bound in noise_regime_bounds.split("_")]
