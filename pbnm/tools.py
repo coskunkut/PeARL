@@ -109,6 +109,8 @@ class plot_tools:
 			width_pt = 426.79135
 		elif width == "pat_reg":
 			width_pt = 468.3324
+		elif width == "pat_reg_dc":
+			width_pt = (494.50888/2)-18
 		elif width == "beamer":
 			width_pt = 307.28987
 		elif width == "beamer_169":
