@@ -99,7 +99,7 @@ class Multinomial:
 			start_index = regime_count * d
 			stop_index = start_index + d
 			# print(start_index, stop_index, omega_list[regime_count])
-			self.noise_regimes["{}_{}".format(start_index, stop_index)] = omega_list[regime_count]
+			# self.noise_regimes["{}_{}".format(start_index, stop_index)] = omega_list[regime_count]
 			self.inject_white_noise(omega_list[regime_count], start_index, stop_index)
 
 	# injects white noise to the sequence with a predetermined rate
@@ -122,6 +122,7 @@ class Multinomial:
 		if len(self.noise_flags) == 0:
 			self.noise_flags = np.zeros(len(self.o_sequence), dtype=int).tolist()
 		self.noise_flags[start_index:stop_index] = subsequence_noise_flags.copy()
+		self.noise_regimes["{}_{}".format(start_index, stop_index)] = noise_rate
 
 	def estimate_noise_rate(self):
 		return np.sum(self.noise_flags) / len(self.noise_flags)
