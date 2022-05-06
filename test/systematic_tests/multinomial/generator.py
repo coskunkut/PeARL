@@ -84,6 +84,16 @@ elif exp_type == "changing_omega":
 		n_drift_severity = batch_config["sequence_info"]["noise"]["noise_drift"]["sudden"]["severity"]
 		n_drift_n, n_drift_d = n_drift_frequency["n"], n_drift_frequency["d"]
 		n_drift_min_diff, n_drift_max_diff = n_drift_severity["min"], n_drift_severity["max"]
+	elif n_drift_type == "sudden_manual":
+		n_duration_omega_list = batch_config["sequence_info"]["noise"]["noise_drift"]["sudden_manual"]["duration_omega_list"]
+	elif n_drift_type == "sudden_linear":
+		omega_start = batch_config["sequence_info"]["noise"]["noise_drift"]["sudden_linear"]["duration_omega_linear"]["start"]
+		omega_end = batch_config["sequence_info"]["noise"]["noise_drift"]["sudden_linear"]["duration_omega_linear"]["end"]
+		step_count = batch_config["sequence_info"]["noise"]["noise_drift"]["sudden_linear"]["duration_omega_linear"]["step_count"]
+		omega_list = np.linspace(omega_start, omega_end, num=step_count, endpoint=True)
+		noise_regime_duration = int((p_drift_n * p_drift_d) / len(omega_list))
+		n_duration_omega_list = np.array(list(zip(np.tile(noise_regime_duration, len(omega_list)), omega_list))).tolist()
+		# print(n_duration_omega_list)
 
 total_number_of_runs = np.prod([
 		number_of_runs,
@@ -161,6 +171,40 @@ with tqdm(
 				current_experiment["sequence_info"]["noise"]["drift_params"] = {
 					"frequency": n_drift_frequency,
 					"severity": n_drift_severity
+				}
+				current_experiment["sequence_info"]["noise"]["noise_regimes"] = multinomial_ins.noise_regimes
+
+				current_experiment["sequence_info"]["regime_parameters"] = multinomial_ins.p
+				current_experiment["sequence_info"]["sequence"] = list(map(str, multinomial_ins.o_sequence))
+				current_experiment["sequence_info"]["p_sequence"] = multinomial_ins.p_sequence
+
+				experiment_name = "exp_{}".format(experiment_file_count)
+				current_experiment["experiment_info"]["name"] = experiment_name
+				experiment_file_path = "{}/{}.json".format(experiment_files_folder_path, experiment_name)
+				dump_json(current_experiment, experiment_file_path)
+				experiment_file_count += 1
+				pbar.update()
+			
+			elif n_drift_type == "sudden_manual" or n_drift_type == "sudden_linear":
+				multinomial_ins = Multinomial(alp_car, current_seed)
+				multinomial_ins.sudden_drift_diff(p_drift_n, p_drift_d, p_drift_min_diff, p_drift_max_diff)
+
+				cursor = 0
+				for duration, omega in n_duration_omega_list:
+					duration = int(duration)
+					multinomial_ins.inject_white_noise(omega, cursor, cursor + duration)
+					cursor += duration
+
+				current_experiment["sequence_info"]["p_drift"]["type"] = p_drift_type
+				current_experiment["sequence_info"]["p_drift"]["params"] = {
+					"frequency": p_drift_frequency,
+					"severity": p_drift_severity
+				}
+
+				current_experiment["sequence_info"]["noise"]["injection_type"] = injection_type
+				current_experiment["sequence_info"]["noise"]["drift_type"] = n_drift_type
+				current_experiment["sequence_info"]["noise"]["drift_params"] = {
+					"duration_omega_list": n_duration_omega_list
 				}
 				current_experiment["sequence_info"]["noise"]["noise_regimes"] = multinomial_ins.noise_regimes
 

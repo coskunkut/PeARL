@@ -126,6 +126,8 @@ for experiment_file in tqdm(
 				current_experiment["sequence_info"]["noise"]["drift_params"]["severity"]["min"],
 				current_experiment["sequence_info"]["noise"]["drift_params"]["severity"]["max"]
 			)
+		elif n_drift_type == "sudden_manual" or n_drift_type == "sudden_linear":
+			n_drift_params = "manual"
 	
 	# build result dictionary for current run
 	run_result_dict = {

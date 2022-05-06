@@ -299,16 +299,6 @@ for plot_type in plots:
 			for start_end_str, omega in current_experiment["sequence_info"]["noise"]["noise_regimes"].items():
 				start, end = [int(t) for t in start_end_str.split("_")]
 				omega_all.extend(np.repeat(omega, end-start).tolist())
-
-			ax2.plot(
-				omega_all,
-				label = "$\omega$",
-				color = "maroon",
-				alpha = 0.9,
-				linewidth = 1,
-				linestyle = "solid",
-				zorder = 10
-			)
 			
 			ax1.plot(
 				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
@@ -338,6 +328,16 @@ for plot_type in plots:
 				zorder = 10
 			)
 
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 1
+			)
+
 			p_change_points = [0]
 			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
 			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
@@ -363,8 +363,16 @@ for plot_type in plots:
 			ax2.set_ylim(0, 1)
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
-			ax1.legend(loc="upper left").set_zorder(100)
-			ax2.legend(loc="upper right").set_zorder(100)
+
+			# ax1.legend(loc="upper left").set_zorder(100)
+			# ax2.legend(loc="upper right").set_zorder(100)
+
+			# these are for chaos to order scenario
+			ax1.legend(loc="lower left").set_zorder(100)
+			ax2.legend(loc="upper left").set_zorder(100)
+			ax1.set_zorder(2)
+			ax2.set_zorder(1)
+			ax1.patch.set_visible(False)
 
 			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
 			fig.savefig(
