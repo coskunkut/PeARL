@@ -42,7 +42,7 @@ def mae_omega_fig(
 		ax.plot(
 			noise_rate_list,
 			slwe_p_a_mae_list,
-			label = "SLWE-P (A)",
+			label = "SLWE-PA",
 			color = "maroon",
 			alpha = 0.9,
 			linewidth = 1,
@@ -52,7 +52,7 @@ def mae_omega_fig(
 	ax.plot(
 		noise_rate_list,
 		slwe_p_e_mae_list,
-		label = "SLWE-P (E)",
+		label = "SLWE-PE",
 		color = "black",
 		alpha = 0.9,
 		linewidth = 1,
