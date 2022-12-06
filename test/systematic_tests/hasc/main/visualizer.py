@@ -41,8 +41,8 @@ def nr_mae_fig(
 	ax.plot(
 		noise_rates,
 		slwe_p_a_mae_list,
-		label = "SLWE-PA",
-		color = "darkgreen",
+		label = "PeARL with AP2LR",
+		color = "steelblue",
 		alpha = 0.9,
 		linewidth = 1,
 		linestyle = "solid",
@@ -51,8 +51,8 @@ def nr_mae_fig(
 	ax.plot(
 		noise_rates,
 		slwe_p_e_mae_list,
-		label = "SLWE-PE",
-		color = "maroon",
+		label = "PeARL with EP2LR",
+		color = "seagreen",
 		alpha = 0.9,
 		linewidth = 1,
 		linestyle = "solid",
@@ -237,6 +237,7 @@ for plot_type in plots:
 		)
 
 	elif plot_type == "ae_time_omega":
+		continue
 		target_doc_props = {
 			"vanilla_paper": {
 				"textwidth": "vanilla_paper",
@@ -282,7 +283,25 @@ for plot_type in plots:
 				linestyle = "solid",
 				zorder = 10
 			)
-			
+
+			ax1.plot(
+				current_experiment["results"]["slwe_p_e"]["ae"],
+				label = "PeARL with EP2LR",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 7
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_t"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 6
+			)
 			ax1.plot(
 				current_experiment["results"]["slwe_e"]["ae"],
 				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
@@ -290,25 +309,7 @@ for plot_type in plots:
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
-				zorder = 10
-			)
-			ax1.plot(
-				current_experiment["results"]["slwe_t"]["ae"],
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-				color = "darkgreen",
-				alpha = 0.9,
-				linewidth = 0.5,
-				linestyle = "solid",
-				zorder = 10
-			)
-			ax1.plot(
-				current_experiment["results"]["slwe_p_e"]["ae"],
-				label = "SLWE-PE",
-				color = "black",
-				alpha = 0.9,
-				linewidth = 0.5,
-				linestyle = "solid",
-				zorder = 10
+				zorder = 5
 			)
 
 			p_change_points = current_experiment["sequence"]["change_points"]
@@ -382,12 +383,13 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-				color = "black",
+				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				# label = "PeARL with EP2LR",
+				label = "PeARL",
+				color = "seagreen",
 				alpha = 0.9,
 				linewidth = 1.0,
-				linestyle = "dashed",
+				linestyle = "solid",
 				zorder = 10
 			)
 			ax1.plot(
@@ -400,15 +402,15 @@ for plot_type in plots:
 				zorder = 10
 			)
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
-				label = "SLWE-PE",
+				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
 				color = "black",
 				alpha = 0.9,
 				linewidth = 1.0,
-				linestyle = "solid",
+				linestyle = "dashed",
 				zorder = 10
 			)
-
+			
 			p_change_points = current_experiment["sequence"]["change_points"]
 			ax1.set_xticks(p_change_points)
 			ax1.xaxis.set_tick_params(rotation=90)
@@ -422,7 +424,11 @@ for plot_type in plots:
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
 			ax1.legend(loc="upper left").set_zorder(100)
-			ax2.legend(loc="upper right").set_zorder(100)
+			ax2.legend(loc="lower right").set_zorder(100)
+
+			ax1.set_zorder(2)
+			ax2.set_zorder(1)
+			ax1.patch.set_visible(False)
 
 			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
 			fig.savefig(

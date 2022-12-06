@@ -95,8 +95,8 @@ for plot_type in plots:
 		ax.plot(
 			noise_rates,
 			slwe_p_a_mae_list,
-			label = "SLWE-PA",
-			color = "darkgreen",
+			label = "PeARL with AP2LR",
+			color = "steelblue",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -105,8 +105,8 @@ for plot_type in plots:
 		ax.plot(
 			noise_rates,
 			slwe_p_e_mae_list,
-			label = "SLWE-PE",
-			color = "maroon",
+			label = "PeARL with EP2LR",
+			color = "seagreen",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -199,31 +199,32 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
+				current_experiment["results"]["slwe_p_e"]["ae"],
+				label = "PeARL with EP2LR",
+				# label = "PeARL",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 7
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_t"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 6
+			)
+			ax1.plot(
 				current_experiment["results"]["slwe_e"]["ae"],
 				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
 				color = "darkgray",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
-				zorder = 10
-			)
-			ax1.plot(
-				current_experiment["results"]["slwe_t"]["ae"],
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-				color = "darkgreen",
-				alpha = 0.9,
-				linewidth = 0.5,
-				linestyle = "solid",
-				zorder = 10
-			)
-			ax1.plot(
-				current_experiment["results"]["slwe_p_e"]["ae"],
-				label = "SLWE-PE",
-				color = "black",
-				alpha = 0.9,
-				linewidth = 0.5,
-				linestyle = "solid",
-				zorder = 10
+				zorder = 5
 			)
 
 			p_change_points = [0]
@@ -299,34 +300,6 @@ for plot_type in plots:
 			for start_end_str, omega in current_experiment["sequence_info"]["noise"]["noise_regimes"].items():
 				start, end = [int(t) for t in start_end_str.split("_")]
 				omega_all.extend(np.repeat(omega, end-start).tolist())
-			
-			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1.0,
-				linestyle = "dashed",
-				zorder = 10
-			)
-			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_t"]["ae"]),
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1.0,
-				linestyle = "dotted",
-				zorder = 10
-			)
-			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
-				label = "SLWE-PE",
-				color = "black",
-				alpha = 0.9,
-				linewidth = 1.0,
-				linestyle = "solid",
-				zorder = 10
-			)
 
 			ax2.plot(
 				omega_all,
@@ -335,9 +308,38 @@ for plot_type in plots:
 				alpha = 0.9,
 				linewidth = 1,
 				linestyle = "solid",
-				zorder = 1
+				zorder = 10
 			)
 
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				label = "PeARL with EP2LR",
+				# label = "PeARL",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "solid",
+				zorder = 7
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_t"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dotted",
+				zorder = 6
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dashed",
+				zorder = 5
+			)
+			
 			p_change_points = [0]
 			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
 			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
@@ -364,12 +366,13 @@ for plot_type in plots:
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
 
-			# ax1.legend(loc="upper left").set_zorder(100)
-			# ax2.legend(loc="upper right").set_zorder(100)
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
 
 			# these are for chaos to order scenario
-			ax1.legend(loc="lower left").set_zorder(100)
-			ax2.legend(loc="upper left").set_zorder(100)
+			# ax1.legend(loc="lower left").set_zorder(100)
+			# ax2.legend(loc="upper left").set_zorder(100)
+
 			ax1.set_zorder(2)
 			ax2.set_zorder(1)
 			ax1.patch.set_visible(False)

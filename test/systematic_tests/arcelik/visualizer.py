@@ -42,8 +42,8 @@ def mae_omega_fig(
 		ax.plot(
 			noise_rate_list,
 			slwe_p_a_mae_list,
-			label = "SLWE-PA",
-			color = "maroon",
+			label = "PeARL with AP2LR",
+			color = "steelblue",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -52,8 +52,9 @@ def mae_omega_fig(
 	ax.plot(
 		noise_rate_list,
 		slwe_p_e_mae_list,
-		label = "SLWE-PE",
-		color = "black",
+		# label = "PeARL with EP2LR",
+		label = "PeARL",
+		color = "seagreen",
 		alpha = 0.9,
 		linewidth = 1,
 		linestyle = "solid",
@@ -213,6 +214,7 @@ for plot_type in plots:
 		)
 
 	elif plot_type == "ae_time_omega":
+		continue
 		target_doc_props = {
 			"pat_reg_dc": {
 				"textwidth": "pat_reg_dc",
@@ -361,12 +363,13 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
-				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-				color = "black",
+				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				# label = "PeARL with EP2LR",
+				label = "PeARL",
+				color = "seagreen",
 				alpha = 0.9,
 				linewidth = 1.0,
-				linestyle = "dashed",
+				linestyle = "solid",
 				zorder = 20
 			)
 			ax1.plot(
@@ -379,15 +382,15 @@ for plot_type in plots:
 				zorder = 20
 			)
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
-				label = "SLWE-PE",
+				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
 				color = "black",
 				alpha = 0.9,
 				linewidth = 1.0,
-				linestyle = "solid",
+				linestyle = "dashed",
 				zorder = 20
 			)
-
+			
 			p_change_points = current_experiment["sequence"]["change_points"]
 			ax1.set_xticks(p_change_points)
 			# ax1.xaxis.set_tick_params(rotation=90)
