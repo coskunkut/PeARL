@@ -40,7 +40,7 @@
 			}
 		}
 	},
-	"algorithms_to_run": ["slwe_e", "slwe_t", "slwe_p_a", "slwe_p_e"],
+	"algorithms_to_run": ["slwe_e", "slwe_t", "pearl_a", "pearl_e"],
 	"parameters": {
 		"experiment": {
 			"number_of_runs": 20
@@ -51,14 +51,14 @@
 		"slwe_t": {
 			"lambda": 0.99
 		},
-		"slwe_p_a": {
+		"pearl_a": {
 			"eta_min": 0.01,
 			"eta_max": 0.1,
 			"rho_eta_mapping": "avg_linear",
 			"k": 50,
 			"L": 100
 		},
-		"slwe_p_e": {
+		"pearl_e": {
 			"eta_min": 0.01,
 			"eta_max": 0.1,
 			"rho_eta_mapping": "event_linear",

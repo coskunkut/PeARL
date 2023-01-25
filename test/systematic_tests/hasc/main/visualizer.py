@@ -1,7 +1,5 @@
 # batch or single experiment result visualizer
 
-import csv
-import glob
 import json
 import os
 import sys
@@ -9,10 +7,10 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from cycler import cycler
 from natsort import natsorted
-from pbnm.tools import plot_tools
-from tqdm import tqdm
+
+from pearl.tools.visualizer import construct_figure_folder_path, get_matplotlib_config, set_size
+
 
 def nr_mae_fig(
 		noise_rates,
@@ -20,8 +18,8 @@ def nr_mae_fig(
 		slwe_e_lambda,
 		slwe_t_mae_list,
 		slwe_t_lambda,
-		slwe_p_a_mae_list,
-		slwe_p_e_mae_list,
+		pearl_a_mae_list,
+		pearl_e_mae_list,
 		target_doc_props,
 		fig_path
 	):
@@ -30,7 +28,7 @@ def nr_mae_fig(
 	fig, ax = plt.subplots(
 		nrows = 1,
 		ncols = 1,
-		figsize = plot_tools.set_size(
+		figsize = set_size(
 			width = target_doc_props["textwidth"],
 			aspect_ratio = target_doc_props["ar"],
 			fraction = target_doc_props["fr"]
@@ -40,7 +38,7 @@ def nr_mae_fig(
 
 	ax.plot(
 		noise_rates,
-		slwe_p_a_mae_list,
+		pearl_a_mae_list,
 		label = "PeARL with AP2LR",
 		color = "steelblue",
 		alpha = 0.9,
@@ -50,7 +48,7 @@ def nr_mae_fig(
 	)
 	ax.plot(
 		noise_rates,
-		slwe_p_e_mae_list,
+		pearl_e_mae_list,
 		label = "PeARL with EP2LR",
 		color = "seagreen",
 		alpha = 0.9,
@@ -91,46 +89,6 @@ def nr_mae_fig(
 	fig.savefig(fig_path, bbox_inches="tight", pad_inches=0.05)
 	plt.close()
 
-	# ax.plot(
-	# 	noise_rate_list,
-	# 	slwe_p_mae_list,
-	# 	label = "SLWE-P",
-	# 	color = "black",
-	# 	alpha = 0.9,
-	# 	linewidth = 1,
-	# 	zorder = 10
-	# )
-	# ax.plot(
-	# 	noise_rate_list,
-	# 	slwe_e_mae_list,
-	# 	label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
-	# 	color = "black",
-	# 	alpha = 0.9,
-	# 	linewidth = 1,
-	# 	zorder = 10
-	# )
-	# ax.plot(
-	# 	noise_rate_list,
-	# 	slwe_t_mae_list,
-	# 	label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
-	# 	color = "black",
-	# 	alpha = 0.9,
-	# 	linewidth = 1,
-	# 	zorder = 10
-	# )
-
-	# ax.set_xlabel("Noise Rate ($\omega$)")
-	# # ax.set_xlim(0, 1)
-	# ax.set_xticks(np.linspace(0, 1, num=11))
-	# # ax.set_ylim(0, 0.4)
-	# # ax.set_ylim(0)
-	# ax.set_ylabel("MAE")
-	# ax.grid(linestyle="dashed", alpha=0.5)
-	# ax.legend(loc="upper left")
-
-	# fig.savefig(fig_path, bbox_inches="tight", pad_inches=0.05)
-	# plt.close()
-
 # get batch id
 sequence_ids = []
 if len(sys.argv) == 2:
@@ -147,7 +105,6 @@ if not os.path.exists(batch_output_folder_path):
 	sys.exit()
 experiment_files_folder_path = os.path.join(batch_output_folder_path, "experiment_files")
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
-run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 
 # get a sample experiment file to obtain visualization config
 sample_experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_files[0])
@@ -156,15 +113,15 @@ with open(sample_experiment_file_path) as sample_experiment_file:
 	plots = sample_experiment["visualization"]["plots"]
 
 run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
-result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
+result_table_path = os.path.join(batch_output_folder_path, "result_table_hasc.csv")
 
 # construct figure folder paths
-figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
+figures_folder_path = construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
 
 for plot_type in plots:
 
 	# initialize directory
-	current_figures_folder_path = plot_tools.construct_figure_folder_path(
+	current_figures_folder_path = construct_figure_folder_path(
 		figures_folder_path,
 		plot_type,
 		remove_existing=True
@@ -176,22 +133,21 @@ for plot_type in plots:
 	if plot_type == "mae_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
 
 		# these matrices are for overall nr_mae fig
 		slwe_e_mae_lists = np.zeros((18, 21))
 		slwe_t_mae_lists = np.zeros((18, 21))
-		slwe_p_a_mae_lists = np.zeros((18, 21))
-		slwe_p_e_mae_lists = np.zeros((18, 21))
+		pearl_a_mae_lists = np.zeros((18, 21))
+		pearl_e_mae_lists = np.zeros((18, 21))
 
 		sequence_id_list = raw_table["sequence_id"].unique()
 		for index, sequence_id in enumerate(sequence_id_list):
@@ -200,13 +156,13 @@ for plot_type in plots:
 			noise_rates = filtered_table["noise_rate"].values
 			slwe_e_mae_list = filtered_table["SLWE (E)"].values
 			slwe_t_mae_list = filtered_table["SLWE (T)"].values
-			slwe_p_a_mae_list = filtered_table["SLWE-PA"].values
-			slwe_p_e_mae_list = filtered_table["SLWE-PE"].values
+			pearl_a_mae_list = filtered_table["PeARL-A"].values
+			pearl_e_mae_list = filtered_table["PeARL-E"].values
 
 			slwe_e_mae_lists[index] = slwe_e_mae_list
 			slwe_t_mae_lists[index] = slwe_t_mae_list
-			slwe_p_a_mae_lists[index] = slwe_p_a_mae_list
-			slwe_p_e_mae_lists[index] = slwe_p_e_mae_list
+			pearl_a_mae_lists[index] = pearl_a_mae_list
+			pearl_e_mae_lists[index] = pearl_e_mae_list
 
 			fig_name = "{}".format(sequence_id)
 			fig_path = "{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf")
@@ -216,8 +172,8 @@ for plot_type in plots:
 				slwe_e_lambda,
 				slwe_t_mae_list,
 				slwe_t_lambda,
-				slwe_p_a_mae_list,
-				slwe_p_e_mae_list,
+				pearl_a_mae_list,
+				pearl_e_mae_list,
 				target_doc_props[target_doc],
 				fig_path
 			)
@@ -230,24 +186,22 @@ for plot_type in plots:
 			slwe_e_lambda,
 			slwe_t_mae_lists.mean(0),
 			slwe_t_lambda,
-			slwe_p_a_mae_lists.mean(0),
-			slwe_p_e_mae_lists.mean(0),
+			pearl_a_mae_lists.mean(0),
+			pearl_e_mae_lists.mean(0),
 			target_doc_props[target_doc],
 			fig_path
 		)
 
 	elif plot_type == "ae_time_omega":
-		continue
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		for experiment_file in experiment_files:
 			# read experiment file as JSON
@@ -259,7 +213,7 @@ for plot_type in plots:
 			fig, ax1 = plt.subplots(
 				nrows = 1,
 				ncols = 1,
-				figsize = plot_tools.set_size(
+				figsize = set_size(
 					width = target_doc_props[target_doc]["textwidth"],
 					aspect_ratio = target_doc_props[target_doc]["ar"],
 					fraction = target_doc_props[target_doc]["fr"]
@@ -285,7 +239,7 @@ for plot_type in plots:
 			)
 
 			ax1.plot(
-				current_experiment["results"]["slwe_p_e"]["ae"],
+				current_experiment["results"]["pearl_e"]["ae"],
 				label = "PeARL with EP2LR",
 				color = "seagreen",
 				alpha = 0.9,
@@ -337,14 +291,13 @@ for plot_type in plots:
 	elif plot_type == "cae_time_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		for experiment_file in experiment_files:
 
@@ -357,7 +310,7 @@ for plot_type in plots:
 			fig, ax1 = plt.subplots(
 				nrows = 1,
 				ncols = 1,
-				figsize = plot_tools.set_size(
+				figsize = set_size(
 					width = target_doc_props[target_doc]["textwidth"],
 					aspect_ratio = target_doc_props[target_doc]["ar"],
 					fraction = target_doc_props[target_doc]["fr"]
@@ -383,7 +336,7 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				np.cumsum(current_experiment["results"]["pearl_e"]["ae"]),
 				# label = "PeARL with EP2LR",
 				label = "PeARL",
 				color = "seagreen",

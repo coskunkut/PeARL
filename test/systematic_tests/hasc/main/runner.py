@@ -5,10 +5,11 @@ import multiprocessing as mp
 import os
 import sys
 
-import numpy as np
 from natsort import natsorted
-from pbnm.estimator import SLWE, SLWE_P
 from tqdm import tqdm
+
+from pearl.estimator import SLWE, PeARL
+from pearl.tools.encoder import NumpyEncoder
 
 
 # each process calls this function to run a given experiment
@@ -32,60 +33,64 @@ def run_experiment(experiment_file):
 
 	# slwe_e
 	if "slwe_e" in algorithms_to_run:
-		slwe_e_lambda = current_experiment["parameters"]["slwe_e"]["lambda"]
-		slwe_e_ins = SLWE(alp_car, slwe_e_lambda)
+		slwe_e_ins = SLWE(
+			alphabet_cardinality=alp_car,
+			learning_coefficient=current_experiment["parameters"]["slwe_e"]["lambda"]
+		)
 		slwe_e_ins.process_sequence(sequence, progress=False)
-		current_experiment["results"]["slwe_e"] = {}
-		current_experiment["results"]["slwe_e"]["estimates"] = slwe_e_ins.estimates
-		current_experiment["results"]["slwe_e"]["token_index_map"] = slwe_e_ins.token_index_map
+		current_experiment["results"]["slwe_e"] = {
+			"estimates": slwe_e_ins.estimates,
+			"symbol_index_map": slwe_e_ins.symbol_index_map
+		}
 
 	# slwe_t
 	if "slwe_t" in algorithms_to_run:
-		slwe_t_lambda = current_experiment["parameters"]["slwe_t"]["lambda"]
-		slwe_t_ins = SLWE(alp_car, slwe_t_lambda)
+		slwe_t_ins = SLWE(
+			alphabet_cardinality=alp_car,
+			learning_coefficient=current_experiment["parameters"]["slwe_t"]["lambda"]
+		)
 		slwe_t_ins.process_sequence(sequence, progress=False)
-		current_experiment["results"]["slwe_t"] = {}
-		current_experiment["results"]["slwe_t"]["estimates"] = slwe_t_ins.estimates
-		current_experiment["results"]["slwe_t"]["token_index_map"] = slwe_t_ins.token_index_map
+		current_experiment["results"]["slwe_t"] = {
+			"estimates": slwe_t_ins.estimates,
+			"symbol_index_map": slwe_t_ins.symbol_index_map
+		}
 
-	# slwe_p_a
-	if "slwe_p_a" in algorithms_to_run:
-		slwe_p_a_eta_min = current_experiment["parameters"]["slwe_p_a"]["eta_min"]
-		slwe_p_a_eta_max = current_experiment["parameters"]["slwe_p_a"]["eta_max"]
-		slwe_p_a_rho_eta_mapping = current_experiment["parameters"]["slwe_p_a"]["rho_eta_mapping"]
-		slwe_p_a_k = current_experiment["parameters"]["slwe_p_a"]["k"]
-		slwe_p_a_L = current_experiment["parameters"]["slwe_p_a"]["L"]
-		slwe_p_a_ins = SLWE_P(alp_car, slwe_p_a_rho_eta_mapping)
-		slwe_p_a_ins.eta_min = slwe_p_a_eta_min
-		slwe_p_a_ins.eta_max = slwe_p_a_eta_max
-		slwe_p_a_ins.k = slwe_p_a_k
-		slwe_p_a_ins.L = slwe_p_a_L
-		slwe_p_a_ins.process_sequence(sequence, progress=False)
-		current_experiment["results"]["slwe_p_a"] = {}
-		current_experiment["results"]["slwe_p_a"]["estimates"] = slwe_p_a_ins.estimates
-		current_experiment["results"]["slwe_p_a"]["token_index_map"] = slwe_p_a_ins.token_index_map
+	# pearl_a
+	if "pearl_a" in algorithms_to_run:
+		pearl_a_ins = PeARL(
+			alphabet_cardinality=alp_car,
+			eta_max=current_experiment["parameters"]["pearl_a"]["eta_max"],
+			eta_min=current_experiment["parameters"]["pearl_a"]["eta_min"],
+			k=current_experiment["parameters"]["pearl_a"]["k"],
+			L=current_experiment["parameters"]["pearl_a"]["L"],
+			rho_eta_mapping=current_experiment["parameters"]["pearl_a"]["rho_eta_mapping"]
+		)
+		pearl_a_ins.process_sequence(sequence, progress=False)
+		current_experiment["results"]["pearl_a"] = {
+			"estimates": pearl_a_ins.estimates,
+			"symbol_index_map": pearl_a_ins.symbol_index_map
+		}
 
-	# slwe_p_e
-	if "slwe_p_e" in algorithms_to_run:
-		slwe_p_e_eta_min = current_experiment["parameters"]["slwe_p_e"]["eta_min"]
-		slwe_p_e_eta_max = current_experiment["parameters"]["slwe_p_e"]["eta_max"]
-		slwe_p_e_rho_eta_mapping = current_experiment["parameters"]["slwe_p_e"]["rho_eta_mapping"]
-		slwe_p_e_k = current_experiment["parameters"]["slwe_p_e"]["k"]
-		slwe_p_e_L = current_experiment["parameters"]["slwe_p_e"]["L"]
-		slwe_p_e_ins = SLWE_P(alp_car, slwe_p_e_rho_eta_mapping)
-		slwe_p_e_ins.eta_min = slwe_p_e_eta_min
-		slwe_p_e_ins.eta_max = slwe_p_e_eta_max
-		slwe_p_e_ins.k = slwe_p_e_k
-		slwe_p_e_ins.L = slwe_p_e_L
-		slwe_p_e_ins.process_sequence(sequence, progress=False)
-		current_experiment["results"]["slwe_p_e"] = {}
-		current_experiment["results"]["slwe_p_e"]["estimates"] = slwe_p_e_ins.estimates
-		current_experiment["results"]["slwe_p_e"]["rho"] = slwe_p_e_ins.rho
-		current_experiment["results"]["slwe_p_e"]["token_index_map"] = slwe_p_e_ins.token_index_map
+	# pearl_e
+	if "pearl_e" in algorithms_to_run:
+		pearl_e_ins = PeARL(
+			alphabet_cardinality=alp_car,
+			eta_max=current_experiment["parameters"]["pearl_e"]["eta_max"],
+			eta_min=current_experiment["parameters"]["pearl_e"]["eta_min"],
+			k=current_experiment["parameters"]["pearl_e"]["k"],
+			L=current_experiment["parameters"]["pearl_e"]["L"],
+			rho_eta_mapping=current_experiment["parameters"]["pearl_e"]["rho_eta_mapping"]
+		)
+		pearl_e_ins.process_sequence(sequence, progress=False)
+		current_experiment["results"]["pearl_e"] = {
+			"estimates": pearl_e_ins.estimates,
+			"rho": pearl_e_ins.rho,
+			"symbol_index_map": pearl_e_ins.symbol_index_map
+		}
 
 	# append results to experiment file
 	with open(experiment_file_path, "w") as current_experiment_file:
-		json.dump(current_experiment, current_experiment_file, indent=4)
+		json.dump(current_experiment, current_experiment_file, indent=4, cls=NumpyEncoder)
 
 # get experiment id
 if len(sys.argv) == 2:
@@ -104,14 +109,14 @@ experiment_files_folder_path = os.path.join(batch_output_folder_path, "experimen
 experiment_files = natsorted(os.listdir(experiment_files_folder_path), reverse=False)
 figures_folder_path = os.path.join(batch_output_folder_path, "figures")
 
-# map each experimet file to a process
+# map each experiment file to a process
 pool = mp.Pool()
 # pool.map(run_experiment, experiment_files)
 r = list(tqdm(
 	pool.imap(run_experiment, experiment_files),
-	total = len(experiment_files),
-	desc = "run".ljust(10),
+	total=len(experiment_files),
+	desc="run".ljust(10),
 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
-	ascii = True
+	ascii=True
 ))
 pool.close()

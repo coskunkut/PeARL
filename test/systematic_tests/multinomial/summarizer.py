@@ -43,21 +43,21 @@ group_by_filter = [
 	"alp_car",
 	"noise_rate"
 ]
-if "slwe_p_a" in algorithms_to_run:
-	summary_table_columns.append("SLWE-PA")
+if "pearl_a" in algorithms_to_run:
+	summary_table_columns.append("PeARL-A")
 	group_by_filter.extend([
-		"slwe_p_a_eta_min",
-		"slwe_p_a_eta_max",
-		"slwe_p_a_k",
-		"slwe_p_a_L"
+		"pearl_a_eta_min",
+		"pearl_a_eta_max",
+		"pearl_a_k",
+		"pearl_a_L"
 	])
-if "slwe_p_e" in algorithms_to_run:
-	summary_table_columns.append("SLWE-PE")
+if "pearl_e" in algorithms_to_run:
+	summary_table_columns.append("PeARL-E")
 	group_by_filter.extend([
-		"slwe_p_e_eta_min",
-		"slwe_p_e_eta_max",
-		"slwe_p_e_k",
-		"slwe_p_e_L"
+		"pearl_e_eta_min",
+		"pearl_e_eta_max",
+		"pearl_e_k",
+		"pearl_e_L"
 	])
 if "slwe_e" in algorithms_to_run:
 	summary_table_columns.append("SLWE (E)")
@@ -67,7 +67,7 @@ if "slwe_t" in algorithms_to_run:
 	group_by_filter.append("slwe_t_lambda")
 
 summary_table = pd.DataFrame(columns = summary_table_columns)
-grouped_table = raw_table.groupby(by=group_by_filter).mean().reset_index()
+grouped_table = raw_table.groupby(by=group_by_filter).mean(numeric_only=True).reset_index()
 
 # summary_table["drift_type"] = grouped_table["drift_type"]
 # summary_table["drift_params"] = grouped_table["drift_params"]
@@ -77,10 +77,10 @@ if "slwe_e" in algorithms_to_run:
 	summary_table["SLWE (E)"] = grouped_table["slwe_e_mae"]
 if "slwe_t" in algorithms_to_run:
 	summary_table["SLWE (T)"] = grouped_table["slwe_t_mae"]
-if "slwe_p_a" in algorithms_to_run:
-	summary_table["SLWE-PA"] = grouped_table["slwe_p_a_mae"]
-if "slwe_p_e" in algorithms_to_run:
-	summary_table["SLWE-PE"] = grouped_table["slwe_p_e_mae"]
+if "pearl_a" in algorithms_to_run:
+	summary_table["PeARL-A"] = grouped_table["pearl_a_mae"]
+if "pearl_e" in algorithms_to_run:
+	summary_table["PeARL-E"] = grouped_table["pearl_e_mae"]
 
 # summary_table = summary_table.transpose().reset_index()
 

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pbnm",
+    name="pearl",
     version="1.0",
     install_requires=[
         "numpy",

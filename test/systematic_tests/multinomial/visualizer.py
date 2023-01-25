@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from cycler import cycler
 from natsort import natsorted
-from pbnm.tools import plot_tools
+from pearl.tools.visualizer import construct_figure_folder_path, get_matplotlib_config, set_size
 from tqdm import tqdm
 
 # get experiment id
@@ -46,12 +46,12 @@ run_logs_path = os.path.join(batch_output_folder_path, "run_logs.csv")
 result_table_path = os.path.join(batch_output_folder_path, "result_table.csv")
 
 # construct figure folder paths
-figures_folder_path = plot_tools.construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
+figures_folder_path = construct_figure_folder_path(batch_output_folder_path, "figures", remove_existing=True)
 
 for plot_type in plots:
 
 	# initialize directory
-	current_figures_folder_path = plot_tools.construct_figure_folder_path(
+	current_figures_folder_path = construct_figure_folder_path(
 		figures_folder_path,
 		plot_type,
 		remove_existing=True
@@ -63,28 +63,27 @@ for plot_type in plots:
 	if plot_type == "mae_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
 		noise_rates = raw_table["noise_rate"].values
 
 		slwe_e_mae_list = raw_table["SLWE (E)"].values
 		slwe_t_mae_list = raw_table["SLWE (T)"].values
-		slwe_p_a_mae_list = raw_table["SLWE-PA"].values
-		slwe_p_e_mae_list = raw_table["SLWE-PE"].values
+		pearl_a_mae_list = raw_table["PeARL-A"].values
+		pearl_e_mae_list = raw_table["PeARL-E"].values
 
 		# generate figure for current experiment (estimates)
 		fig, ax = plt.subplots(
 			nrows = 1,
 			ncols = 1,
-			figsize = plot_tools.set_size(
+			figsize = set_size(
 				width = target_doc_props[target_doc]["textwidth"],
 				aspect_ratio = target_doc_props[target_doc]["ar"],
 				fraction = target_doc_props[target_doc]["fr"]
@@ -94,7 +93,7 @@ for plot_type in plots:
 
 		ax.plot(
 			noise_rates,
-			slwe_p_a_mae_list,
+			pearl_a_mae_list,
 			label = "PeARL with AP2LR",
 			color = "steelblue",
 			alpha = 0.9,
@@ -104,7 +103,7 @@ for plot_type in plots:
 		)
 		ax.plot(
 			noise_rates,
-			slwe_p_e_mae_list,
+			pearl_e_mae_list,
 			label = "PeARL with EP2LR",
 			color = "seagreen",
 			alpha = 0.9,
@@ -142,7 +141,7 @@ for plot_type in plots:
 		ax.grid(linestyle="dashed", alpha=0.5)
 		ax.legend(loc="upper left")
 
-		# fig_name = "k{}_L{}".format(slwe_p_a_k, slwe_p_a_L)
+		# fig_name = "k{}_L{}".format(pearl_a_k, pearl_a_L)
 		fig_name = "mae_omega".format()
 		fig.savefig(
 			"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
@@ -154,14 +153,13 @@ for plot_type in plots:
 	elif plot_type == "ae_time_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		for experiment_file in experiment_files:
 			# read experiment file as JSON
@@ -173,7 +171,7 @@ for plot_type in plots:
 			fig, ax1 = plt.subplots(
 				nrows = 1,
 				ncols = 1,
-				figsize = plot_tools.set_size(
+				figsize = set_size(
 					width = target_doc_props[target_doc]["textwidth"],
 					aspect_ratio = target_doc_props[target_doc]["ar"],
 					fraction = target_doc_props[target_doc]["fr"]
@@ -199,7 +197,7 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
-				current_experiment["results"]["slwe_p_e"]["ae"],
+				current_experiment["results"]["pearl_e"]["ae"],
 				label = "PeARL with EP2LR",
 				# label = "PeARL",
 				color = "seagreen",
@@ -266,14 +264,13 @@ for plot_type in plots:
 	elif plot_type == "cae_time_omega":
 		target_doc_props = {
 			"vanilla_paper": {
-				"textwidth": "vanilla_paper",
+				"textwidth": "pat_reg",
 				"fr": 0.5,
-				"ar": 1.25,
-				"tex_config": "latex"
+				"ar": 1.25
 			}
 		}
 		target_doc = "vanilla_paper"
-		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
 		for experiment_file in experiment_files:
 
@@ -286,7 +283,7 @@ for plot_type in plots:
 			fig, ax1 = plt.subplots(
 				nrows = 1,
 				ncols = 1,
-				figsize = plot_tools.set_size(
+				figsize = set_size(
 					width = target_doc_props[target_doc]["textwidth"],
 					aspect_ratio = target_doc_props[target_doc]["ar"],
 					fraction = target_doc_props[target_doc]["fr"]
@@ -312,7 +309,7 @@ for plot_type in plots:
 			)
 
 			ax1.plot(
-				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				np.cumsum(current_experiment["results"]["pearl_e"]["ae"]),
 				label = "PeARL with EP2LR",
 				# label = "PeARL",
 				color = "seagreen",
@@ -385,15 +382,91 @@ for plot_type in plots:
 			)
 			plt.close()
 
+	elif plot_type == "rho_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "pat_reg",
+				"fr": 0.5,
+				"ar": 1.25
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(get_matplotlib_config("generic_latex"))
 
-# total_number_of_figs = 1
-# with tqdm(
-# 	total = total_number_of_figs,
-# 	position = 0,
-# 	leave = True,
-# 	desc = "visualize".ljust(10),
-# 	bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
-# 	ascii = True
-# 	) as pbar:
+		for experiment_file in experiment_files:
 
-	# pbar.update()
+			# read experiment file as JSON
+			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
+			with open(experiment_file_path) as current_experiment_file:
+				current_experiment = json.load(current_experiment_file)
+
+			# generate figure for current experiment (estimates)
+			fig, ax1 = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax2 = ax1.twinx()
+
+			omega_all = []
+			for start_end_str, omega in current_experiment["sequence_info"]["noise"]["noise_regimes"].items():
+				start, end = [int(t) for t in start_end_str.split("_")]
+				omega_all.extend(np.repeat(omega, end-start).tolist())
+
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+
+			# rho = np.transpose(current_experiment["results"]["pearl_e"]["rho"])
+			rho = current_experiment["results"]["pearl_e"]["rho"]
+
+			ax1.plot(
+				np.mean(rho, axis=1),
+				label = "Persistence",
+				# label = "PeARL",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "solid",
+				zorder = 7
+			)
+
+			ax1.set_xlabel("Observation Count")
+			ax1.set_ylabel("Persistence")
+			ax2.set_ylabel("Noise Rate ($\omega$)")
+
+			ax1.set_ylim(0.12, 0.18)
+			# ax2.set_ylim(0, 1)
+
+			ax1.grid(linestyle="dashed", alpha=0.5)
+
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
+
+			# these are for chaos to order scenario
+			# ax1.legend(loc="lower left").set_zorder(100)
+			# ax2.legend(loc="upper left").set_zorder(100)
+
+			ax1.set_zorder(2)
+			ax2.set_zorder(1)
+			ax1.patch.set_visible(False)
+
+			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()

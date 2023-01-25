@@ -4,18 +4,17 @@ import collections
 import json
 import os
 import sys
-from datetime import datetime
 from glob import glob
 
 import numpy as np
 import pandas as pd
 from bkmeans import BKMeans
 from natsort import natsorted
-from scipy import signal
-from sklearn import cluster, metrics, preprocessing
 from tqdm import tqdm
-from pbnm.generator import Multinomial
-from pbnm.tools import get_effective_noise_rate
+
+from pearl.generator import Multinomial
+from pearl.tools.signal import get_effective_noise_rate
+
 
 def dump_json(current_experiment, experiment_file_path):
 	with open(experiment_file_path, "w") as json_file:
@@ -145,19 +144,19 @@ with tqdm(
 						"slwe_t": {
 							"lambda": batch_config["parameters"]["slwe_t"]["lambda"]
 						},
-						"slwe_p_a": {
-							"eta_min": batch_config["parameters"]["slwe_p_a"]["eta"]["min"],
-							"eta_max": batch_config["parameters"]["slwe_p_a"]["eta"]["max"],
-							"rho_eta_mapping": batch_config["parameters"]["slwe_p_a"]["rho_eta_mapping"],
-							"k": batch_config["parameters"]["slwe_p_a"]["k"],
-							"L": batch_config["parameters"]["slwe_p_a"]["L"]
+						"pearl_a": {
+							"eta_min": batch_config["parameters"]["pearl_a"]["eta"]["min"],
+							"eta_max": batch_config["parameters"]["pearl_a"]["eta"]["max"],
+							"rho_eta_mapping": batch_config["parameters"]["pearl_a"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["pearl_a"]["k"],
+							"L": batch_config["parameters"]["pearl_a"]["L"]
 						},
-						"slwe_p_e": {
-							"eta_min": batch_config["parameters"]["slwe_p_e"]["eta"]["min"],
-							"eta_max": batch_config["parameters"]["slwe_p_e"]["eta"]["max"],
-							"rho_eta_mapping": batch_config["parameters"]["slwe_p_e"]["rho_eta_mapping"],
-							"k": batch_config["parameters"]["slwe_p_e"]["k"],
-							"L": batch_config["parameters"]["slwe_p_e"]["L"]
+						"pearl_e": {
+							"eta_min": batch_config["parameters"]["pearl_e"]["eta"]["min"],
+							"eta_max": batch_config["parameters"]["pearl_e"]["eta"]["max"],
+							"rho_eta_mapping": batch_config["parameters"]["pearl_e"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["pearl_e"]["k"],
+							"L": batch_config["parameters"]["pearl_e"]["L"]
 						}
 					},
 					"preprocessing": {
@@ -460,17 +459,17 @@ with tqdm(
 				# 						current_experiment["parameters"]["slwe_t"] = {}
 				# 						current_experiment["parameters"]["slwe_t"]["lambda"] = slwe_t_lambda
 
-				# 						# slwe_p parameters
-				# 						for slwe_p_eta_min in slwe_p_eta_min_list:
-				# 							for slwe_p_eta_max in slwe_p_eta_max_list:
-				# 								for slwe_p_k in slwe_p_k_list:
-				# 									for slwe_p_L in slwe_p_L_list:
+				# 						# pearl parameters
+				# 						for pearl_eta_min in pearl_eta_min_list:
+				# 							for pearl_eta_max in pearl_eta_max_list:
+				# 								for pearl_k in pearl_k_list:
+				# 									for pearl_L in pearl_L_list:
 											
-				# 										current_experiment["parameters"]["slwe_p"] = {}
-				# 										current_experiment["parameters"]["slwe_p"]["eta_min"] = slwe_p_eta_min
-				# 										current_experiment["parameters"]["slwe_p"]["eta_max"] = slwe_p_eta_max
-				# 										current_experiment["parameters"]["slwe_p"]["k"] = slwe_p_k
-				# 										current_experiment["parameters"]["slwe_p"]["L"] = slwe_p_L
+				# 										current_experiment["parameters"]["pearl"] = {}
+				# 										current_experiment["parameters"]["pearl"]["eta_min"] = pearl_eta_min
+				# 										current_experiment["parameters"]["pearl"]["eta_max"] = pearl_eta_max
+				# 										current_experiment["parameters"]["pearl"]["k"] = pearl_k
+				# 										current_experiment["parameters"]["pearl"]["L"] = pearl_L
 
 				# 										experiment_name = "exp_{}".format(experiment_file_count)
 				# 										current_experiment["experiment_info"]["name"] = experiment_name

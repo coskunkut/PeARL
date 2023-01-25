@@ -6,18 +6,15 @@ import json
 import math
 import os
 import sys
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from bkmeans import BKMeans
 from more_itertools.recipes import grouper
-from natsort import natsorted
-from scipy import signal
-from sklearn import cluster, metrics, preprocessing
 from tqdm import tqdm
-from pbnm.generator import Multinomial
-from pbnm.tools import decompose_signal
+
+from pearl.generator import Multinomial
+from pearl.tools.signal import decompose_signal
 
 
 def dump_json(current_experiment, experiment_file_path):
@@ -160,19 +157,19 @@ with tqdm(
 						"slwe_t": {
 							"lambda": batch_config["parameters"]["slwe_t"]["lambda"]
 						},
-						"slwe_p_a": {
-							"eta_min": batch_config["parameters"]["slwe_p_a"]["eta_min"],
-							"eta_max": batch_config["parameters"]["slwe_p_a"]["eta_max"],
-							"rho_eta_mapping": batch_config["parameters"]["slwe_p_a"]["rho_eta_mapping"],
-							"k": batch_config["parameters"]["slwe_p_a"]["k"],
-							"L": batch_config["parameters"]["slwe_p_a"]["L"]
+						"pearl_a": {
+							"eta_min": batch_config["parameters"]["pearl_a"]["eta_min"],
+							"eta_max": batch_config["parameters"]["pearl_a"]["eta_max"],
+							"rho_eta_mapping": batch_config["parameters"]["pearl_a"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["pearl_a"]["k"],
+							"L": batch_config["parameters"]["pearl_a"]["L"]
 						},
-						"slwe_p_e": {
-							"eta_min": batch_config["parameters"]["slwe_p_e"]["eta_min"],
-							"eta_max": batch_config["parameters"]["slwe_p_e"]["eta_max"],
-							"rho_eta_mapping": batch_config["parameters"]["slwe_p_e"]["rho_eta_mapping"],
-							"k": batch_config["parameters"]["slwe_p_e"]["k"],
-							"L": batch_config["parameters"]["slwe_p_e"]["L"]
+						"pearl_e": {
+							"eta_min": batch_config["parameters"]["pearl_e"]["eta_min"],
+							"eta_max": batch_config["parameters"]["pearl_e"]["eta_max"],
+							"rho_eta_mapping": batch_config["parameters"]["pearl_e"]["rho_eta_mapping"],
+							"k": batch_config["parameters"]["pearl_e"]["k"],
+							"L": batch_config["parameters"]["pearl_e"]["L"]
 						}
 					},
 					"preprocessing": {

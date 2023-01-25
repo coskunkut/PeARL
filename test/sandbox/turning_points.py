@@ -1,31 +1,23 @@
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from pbnm.estimator import SLWE, SLWE_P
-from pbnm.generator import Multinomial
-from pbnm.tools import align_matrix, plot_tools
 from sklearn import metrics
 from tqdm import tqdm
 
+from pearl.estimator import SLWE, PeARL
+from pearl.generator import Multinomial
+from pearl.tools.signal import align_matrix
+from pearl.tools.visualizer import get_matplotlib_config, set_size, upsample_coords
+
 # build paths
 root_folder = os.path.abspath(os.curdir)
-figure_folder = os.path.join(root_folder, "test", "figures")
-
-# build propery dict for target documents
-target_doc_props = {}
-target_doc_props["default"] = {}
-target_doc_props["default"]["textwidth"] = "default"
-target_doc_props["default"]["fr"] = 1
-target_doc_props["default"]["ar"] = 2.25
-target_doc_props["default"]["tex_config"] = "full"
+figure_folder = os.path.join(root_folder, "test", "sandbox")
 
 slwe_explore_mae_list = []
 slwe_exploit_mae_list = []
 slwe_alr_mae_list = []
-slwe_p_mae_list = []
+pearl_mae_list = []
 slwe_explore_eta = 0.1
 slwe_exploit_eta = 0.01
 
@@ -34,56 +26,53 @@ noise_rate_list = np.linspace(noise_bounds[0], noise_bounds[1], num=15)
 for noise_rate in tqdm(noise_rate_list):
 
 	# generate sequence
-	multinomial_ins = Multinomial(25)
+	multinomial_ins = Multinomial(4, 25)
 	multinomial_ins.sudden_drift_diff(
-		alp_car = 4,
 		n = 10,
 		d = 500,
 		min_diff = 0.3,
 		max_diff = 0.6
 	)
 	multinomial_ins.inject_white_noise(
-		alp_car = 4,
 		noise_rate = noise_rate
 	)
-	sequence = [token for token in multinomial_ins.o_sequence]
+	sequence = [symbol for symbol in multinomial_ins.o_sequence]
 
 	slwe_explore = SLWE(4, 1-slwe_explore_eta)
 	slwe_explore.process_sequence(sequence, progress=False, progress_desc="SLWE (E)")
-	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_explore.token_index_map)
-	slwe_explore_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_explore.estimates)
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_explore.symbol_index_map)
+	slwe_explore_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_explore.estimates[1:])
 	slwe_explore_mae_list.append(slwe_explore_mae)
 
 	slwe_exploit = SLWE(4, 1-slwe_exploit_eta)
 	slwe_exploit.process_sequence(sequence, progress=False, progress_desc="SLWE (T)")
-	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_exploit.token_index_map)
-	slwe_exploit_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_exploit.estimates)
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_exploit.symbol_index_map)
+	slwe_exploit_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_exploit.estimates[1:])
 	slwe_exploit_mae_list.append(slwe_exploit_mae)
 
-	slwe_p = SLWE_P(4)
-	slwe_p.process_sequence(sequence, progress=False, progress_desc="SLWE_P")
-	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, slwe_p.token_index_map)
-	slwe_p_mae = metrics.mean_absolute_error(aligned_p_sequence, slwe_p.estimates)
-	slwe_p_mae_list.append(slwe_p_mae)
+	pearl = PeARL(4)
+	pearl.process_sequence(sequence, progress=False, progress_desc="pearl")
+	aligned_p_sequence = align_matrix(multinomial_ins.p_sequence, pearl.symbol_index_map)
+	pearl_mae = metrics.mean_absolute_error(aligned_p_sequence, pearl.estimates[1:])
+	pearl_mae_list.append(pearl_mae)
 
 # get turning points
 slwe_mae_best = np.minimum(slwe_explore_mae_list, slwe_exploit_mae_list)
-nr, mae_1 = plot_tools.upsample_coords([noise_rate_list, slwe_mae_best])
-nr, mae_2 = plot_tools.upsample_coords([noise_rate_list, slwe_p_mae_list])
+nr, mae_1 = upsample_coords([noise_rate_list, slwe_mae_best])
+nr, mae_2 = upsample_coords([noise_rate_list, pearl_mae_list])
 diff = np.abs(np.subtract(mae_1, mae_2))
 turning_points = nr[np.argwhere(diff < 0.0001)].flatten().tolist()
 print("\nturning points:\n{}".format(turning_points))
 
 # visualization
-target_doc = "default"
-plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+plt.rcParams.update(get_matplotlib_config("generic_latex"))
 fig, ax = plt.subplots(
 	nrows = 1,
 	ncols = 1,
-	figsize = plot_tools.set_size(
-		width = target_doc_props[target_doc]["textwidth"],
-		aspect_ratio = target_doc_props[target_doc]["ar"],
-		fraction = target_doc_props[target_doc]["fr"]
+	figsize = set_size(
+		width = "generic_paper",
+		aspect_ratio = 2.25,
+		fraction = 1
 	)
 )
 fig.set_tight_layout(True)
@@ -106,8 +95,8 @@ ax.plot(
 )
 ax.plot(
 	noise_rate_list,
-	slwe_p_mae_list,
-	label = "SLWE-P",
+	pearl_mae_list,
+	label = "PeARL",
 	linestyle = "solid",
 	linewidth = 0.75,
 	zorder = 5

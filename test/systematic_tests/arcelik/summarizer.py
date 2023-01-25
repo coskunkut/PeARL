@@ -1,14 +1,9 @@
 # batch experiment table generator
 
-import csv
-import json
 import os
 import sys
 
-import numpy as np
 import pandas as pd
-from natsort import index_natsorted
-from tqdm import tqdm
 
 # get experiment id
 if len(sys.argv) == 2:
@@ -59,23 +54,23 @@ if "slwe_e" in algorithms_to_run:
 if "slwe_t" in algorithms_to_run:
 	summary_table_columns.append("SLWE (T)")
 	group_by_filter.append("slwe_t_lambda")
-if "slwe_p_a" in algorithms_to_run:
-	summary_table_columns.append("SLWE-P (A)")
+if "pearl_a" in algorithms_to_run:
+	summary_table_columns.append("PeARL-A")
 	group_by_filter.extend([
-		"slwe_p_a_eta_min",
-		"slwe_p_a_eta_max",
-		"slwe_p_a_rho_eta_mapping",
-		"slwe_p_a_k",
-		"slwe_p_a_L"
+		"pearl_a_eta_min",
+		"pearl_a_eta_max",
+		"pearl_a_rho_eta_mapping",
+		"pearl_a_k",
+		"pearl_a_L"
 	])
-if "slwe_p_e" in algorithms_to_run:
-	summary_table_columns.append("SLWE-P (E)")
+if "pearl_e" in algorithms_to_run:
+	summary_table_columns.append("PeARL-E")
 	group_by_filter.extend([
-		"slwe_p_e_eta_min",
-		"slwe_p_e_eta_max",
-		"slwe_p_e_rho_eta_mapping",
-		"slwe_p_e_k",
-		"slwe_p_e_L"
+		"pearl_e_eta_min",
+		"pearl_e_eta_max",
+		"pearl_e_rho_eta_mapping",
+		"pearl_e_k",
+		"pearl_e_L"
 	])
 
 summary_table = pd.DataFrame(columns = summary_table_columns)
@@ -90,10 +85,10 @@ if "slwe_e" in algorithms_to_run:
 	summary_table["SLWE (E)"] = grouped_table["slwe_e_mae"]
 if "slwe_t" in algorithms_to_run:
 	summary_table["SLWE (T)"] = grouped_table["slwe_t_mae"]
-if "slwe_p_a" in algorithms_to_run:
-	summary_table["SLWE-P (A)"] = grouped_table["slwe_p_a_mae"]
-if "slwe_p_e" in algorithms_to_run:
-	summary_table["SLWE-P (E)"] = grouped_table["slwe_p_e_mae"]
+if "pearl_a" in algorithms_to_run:
+	summary_table["PeARL-A"] = grouped_table["pearl_a_mae"]
+if "pearl_e" in algorithms_to_run:
+	summary_table["PeARL-E"] = grouped_table["pearl_e_mae"]
 
 # replace _ with - for pgfplotstable
 summary_table["sequence_id"] = summary_table["sequence_id"].str.replace("_", "-")

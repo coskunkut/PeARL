@@ -6,8 +6,10 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pbnm.tools import MovingStatistics, plot_tools
+from pearl.tools.stats import MovingStatistics
+from pearl.tools.visualizer import get_matplotlib_config, set_size
 from tqdm import tqdm
+from pathlib import Path
 
 # persistence calculation
 def calculate_rho (k, l, L):
@@ -15,7 +17,8 @@ def calculate_rho (k, l, L):
 
 # build paths
 root_folder = os.path.abspath(os.curdir)
-figure_folder = os.path.join(root_folder, "test", "figures")
+figure_folder = os.path.join(root_folder, "test", "figure_generator")
+Path(figure_folder).mkdir(parents=True, exist_ok=True)
 
 # generate random sequence
 rng_seed = 42
@@ -60,27 +63,15 @@ print("final rho vec: {}".format(rho_ms.mean))
 print("final avg. rho: {}".format(np.mean(rho_ms.mean)))
 print("theoretical - empirical: {}".format(avg_expected_rho - np.mean(rho_ms.mean)))
 
-
-# build propery dict for target documents
-target_doc_props = {
-	"pat_reg": {
-		"textwidth": "pat_reg_dc",
-		"fr": 1,
-		"ar": 1.5,
-		"config": "latex"
-	}
-}
-
 # visualization
-target_doc = "pat_reg"
-plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["config"]])
+plt.rcParams.update(get_matplotlib_config("generic_latex"))
 fig, ax = plt.subplots(
 	nrows = 1,
 	ncols = 1,
-	figsize = plot_tools.set_size(
-		width = target_doc_props[target_doc]["textwidth"],
-		aspect_ratio = target_doc_props[target_doc]["ar"],
-		fraction = target_doc_props[target_doc]["fr"]
+	figsize = set_size(
+		width = "pat_reg_dc",
+		aspect_ratio = 1.5,
+		fraction = 1
 	)
 )
 fig.set_tight_layout(True)

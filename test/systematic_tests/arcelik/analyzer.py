@@ -7,9 +7,10 @@ import sys
 
 import numpy as np
 from natsort import natsorted
-from pbnm.tools import align_matrix
 from sklearn import metrics
 from tqdm import tqdm
+
+from pearl.tools.signal import align_matrix
 
 # get experiment id
 if len(sys.argv) == 2:
@@ -64,23 +65,23 @@ if "slwe_t" in algorithms_to_run:
 		"slwe_t_lambda",
 		"slwe_t_mae"
 	])
-if "slwe_p_a" in algorithms_to_run:
+if "pearl_a" in algorithms_to_run:
 	fieldnames.extend([
-		"slwe_p_a_eta_min",
-		"slwe_p_a_eta_max",
-		"slwe_p_a_rho_eta_mapping",
-		"slwe_p_a_k",
-		"slwe_p_a_L",
-		"slwe_p_a_mae"
+		"pearl_a_eta_min",
+		"pearl_a_eta_max",
+		"pearl_a_rho_eta_mapping",
+		"pearl_a_k",
+		"pearl_a_L",
+		"pearl_a_mae"
 	])
-if "slwe_p_e" in algorithms_to_run:
+if "pearl_e" in algorithms_to_run:
 	fieldnames.extend([
-		"slwe_p_e_eta_min",
-		"slwe_p_e_eta_max",
-		"slwe_p_e_rho_eta_mapping",
-		"slwe_p_e_k",
-		"slwe_p_e_L",
-		"slwe_p_e_mae"
+		"pearl_e_eta_min",
+		"pearl_e_eta_max",
+		"pearl_e_rho_eta_mapping",
+		"pearl_e_k",
+		"pearl_e_L",
+		"pearl_e_mae"
 	])
 
 # prepare csv file, write header row
@@ -145,9 +146,9 @@ for experiment_file in tqdm(
 		slwe_e_estimates = current_experiment["results"]["slwe_e"]["estimates"]
 		slwe_e_token_index_map = current_experiment["results"]["slwe_e"]["token_index_map"]
 		slwe_e_aligned_p_sequence = align_matrix(p_sequence, slwe_e_token_index_map)
-		slwe_e_abs_diff = np.abs(np.subtract(slwe_e_aligned_p_sequence, slwe_e_estimates))
+		slwe_e_abs_diff = np.abs(np.subtract(slwe_e_aligned_p_sequence, slwe_e_estimates[1:]))
 		slwe_e_abs_error = np.mean(slwe_e_abs_diff, axis=1)
-		slwe_e_mae = metrics.mean_absolute_error(slwe_e_aligned_p_sequence, slwe_e_estimates)
+		slwe_e_mae = metrics.mean_absolute_error(slwe_e_aligned_p_sequence, slwe_e_estimates[1:])
 		run_result_dict["slwe_e_mae"] = slwe_e_mae
 		current_experiment["results"]["slwe_e"]["ae"] = slwe_e_abs_error.tolist()
 		current_experiment["results"]["slwe_e"]["mae"] = slwe_e_mae
@@ -158,46 +159,46 @@ for experiment_file in tqdm(
 		slwe_t_estimates = current_experiment["results"]["slwe_t"]["estimates"]
 		slwe_t_token_index_map = current_experiment["results"]["slwe_t"]["token_index_map"]
 		slwe_t_aligned_p_sequence = align_matrix(p_sequence, slwe_t_token_index_map)
-		slwe_t_abs_diff = np.abs(np.subtract(slwe_t_aligned_p_sequence, slwe_t_estimates))
+		slwe_t_abs_diff = np.abs(np.subtract(slwe_t_aligned_p_sequence, slwe_t_estimates[1:]))
 		slwe_t_abs_error = np.mean(slwe_t_abs_diff, axis=1)
-		slwe_t_mae = metrics.mean_absolute_error(slwe_t_aligned_p_sequence, slwe_t_estimates)
+		slwe_t_mae = metrics.mean_absolute_error(slwe_t_aligned_p_sequence, slwe_t_estimates[1:])
 		run_result_dict["slwe_t_mae"] = slwe_t_mae
 		current_experiment["results"]["slwe_t"]["ae"] = slwe_t_abs_error.tolist()
 		current_experiment["results"]["slwe_t"]["mae"] = slwe_t_mae
 
-	# slwe_p_a
-	if "slwe_p_a" in algorithms_to_run:
-		run_result_dict["slwe_p_a_eta_min"] = current_experiment["parameters"]["slwe_p_a"]["eta_min"]
-		run_result_dict["slwe_p_a_eta_max"] = current_experiment["parameters"]["slwe_p_a"]["eta_max"]
-		run_result_dict["slwe_p_a_rho_eta_mapping"] = current_experiment["parameters"]["slwe_p_a"]["rho_eta_mapping"]
-		run_result_dict["slwe_p_a_k"] = current_experiment["parameters"]["slwe_p_a"]["k"]
-		run_result_dict["slwe_p_a_L"] = current_experiment["parameters"]["slwe_p_a"]["L"]
-		slwe_p_a_estimates = current_experiment["results"]["slwe_p_a"]["estimates"]
-		slwe_p_a_token_index_map = current_experiment["results"]["slwe_p_a"]["token_index_map"]
-		slwe_p_a_aligned_p_sequence = align_matrix(p_sequence, slwe_p_a_token_index_map)
-		slwe_p_a_abs_diff = np.abs(np.subtract(slwe_p_a_aligned_p_sequence, slwe_p_a_estimates))
-		slwe_p_a_abs_error = np.mean(slwe_p_a_abs_diff, axis=1)
-		slwe_p_a_mae = metrics.mean_absolute_error(slwe_p_a_aligned_p_sequence, slwe_p_a_estimates)
-		run_result_dict["slwe_p_a_mae"] = slwe_p_a_mae
-		current_experiment["results"]["slwe_p_a"]["ae"] = slwe_p_a_abs_error.tolist()
-		current_experiment["results"]["slwe_p_a"]["mae"] = slwe_p_a_mae
+	# pearl_a
+	if "pearl_a" in algorithms_to_run:
+		run_result_dict["pearl_a_eta_min"] = current_experiment["parameters"]["pearl_a"]["eta_min"]
+		run_result_dict["pearl_a_eta_max"] = current_experiment["parameters"]["pearl_a"]["eta_max"]
+		run_result_dict["pearl_a_rho_eta_mapping"] = current_experiment["parameters"]["pearl_a"]["rho_eta_mapping"]
+		run_result_dict["pearl_a_k"] = current_experiment["parameters"]["pearl_a"]["k"]
+		run_result_dict["pearl_a_L"] = current_experiment["parameters"]["pearl_a"]["L"]
+		pearl_a_estimates = current_experiment["results"]["pearl_a"]["estimates"]
+		pearl_a_token_index_map = current_experiment["results"]["pearl_a"]["token_index_map"]
+		pearl_a_aligned_p_sequence = align_matrix(p_sequence, pearl_a_token_index_map)
+		pearl_a_abs_diff = np.abs(np.subtract(pearl_a_aligned_p_sequence, pearl_a_estimates[1:]))
+		pearl_a_abs_error = np.mean(pearl_a_abs_diff, axis=1)
+		pearl_a_mae = metrics.mean_absolute_error(pearl_a_aligned_p_sequence, pearl_a_estimates[1:])
+		run_result_dict["pearl_a_mae"] = pearl_a_mae
+		current_experiment["results"]["pearl_a"]["ae"] = pearl_a_abs_error.tolist()
+		current_experiment["results"]["pearl_a"]["mae"] = pearl_a_mae
 		
-	# slwe_p_e
-	if "slwe_p_e" in algorithms_to_run:
-		run_result_dict["slwe_p_e_eta_min"] = current_experiment["parameters"]["slwe_p_e"]["eta_min"]
-		run_result_dict["slwe_p_e_eta_max"] = current_experiment["parameters"]["slwe_p_e"]["eta_max"]
-		run_result_dict["slwe_p_e_rho_eta_mapping"] = current_experiment["parameters"]["slwe_p_e"]["rho_eta_mapping"]
-		run_result_dict["slwe_p_e_k"] = current_experiment["parameters"]["slwe_p_e"]["k"]
-		run_result_dict["slwe_p_e_L"] = current_experiment["parameters"]["slwe_p_e"]["L"]
-		slwe_p_e_estimates = current_experiment["results"]["slwe_p_e"]["estimates"]
-		slwe_p_e_token_index_map = current_experiment["results"]["slwe_p_e"]["token_index_map"]
-		slwe_p_e_aligned_p_sequence = align_matrix(p_sequence, slwe_p_e_token_index_map)
-		slwe_p_e_abs_diff = np.abs(np.subtract(slwe_p_e_aligned_p_sequence, slwe_p_e_estimates))
-		slwe_p_e_abs_error = np.mean(slwe_p_e_abs_diff, axis=1)
-		slwe_p_e_mae = metrics.mean_absolute_error(slwe_p_e_aligned_p_sequence, slwe_p_e_estimates)
-		run_result_dict["slwe_p_e_mae"] = slwe_p_e_mae
-		current_experiment["results"]["slwe_p_e"]["ae"] = slwe_p_e_abs_error.tolist()
-		current_experiment["results"]["slwe_p_e"]["mae"] = slwe_p_e_mae
+	# pearl_e
+	if "pearl_e" in algorithms_to_run:
+		run_result_dict["pearl_e_eta_min"] = current_experiment["parameters"]["pearl_e"]["eta_min"]
+		run_result_dict["pearl_e_eta_max"] = current_experiment["parameters"]["pearl_e"]["eta_max"]
+		run_result_dict["pearl_e_rho_eta_mapping"] = current_experiment["parameters"]["pearl_e"]["rho_eta_mapping"]
+		run_result_dict["pearl_e_k"] = current_experiment["parameters"]["pearl_e"]["k"]
+		run_result_dict["pearl_e_L"] = current_experiment["parameters"]["pearl_e"]["L"]
+		pearl_e_estimates = current_experiment["results"]["pearl_e"]["estimates"]
+		pearl_e_token_index_map = current_experiment["results"]["pearl_e"]["token_index_map"]
+		pearl_e_aligned_p_sequence = align_matrix(p_sequence, pearl_e_token_index_map)
+		pearl_e_abs_diff = np.abs(np.subtract(pearl_e_aligned_p_sequence, pearl_e_estimates[1:]))
+		pearl_e_abs_error = np.mean(pearl_e_abs_diff, axis=1)
+		pearl_e_mae = metrics.mean_absolute_error(pearl_e_aligned_p_sequence, pearl_e_estimates[1:])
+		run_result_dict["pearl_e_mae"] = pearl_e_mae
+		current_experiment["results"]["pearl_e"]["ae"] = pearl_e_abs_error.tolist()
+		current_experiment["results"]["pearl_e"]["mae"] = pearl_e_mae
 	
 	# append results of current run to csv file
 	with open(run_logs_path, mode="a") as run_logs_file:

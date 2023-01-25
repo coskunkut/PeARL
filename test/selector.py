@@ -31,13 +31,10 @@ fig_dir_path = os.path.join(
 fig_file_names = {
 	"fixed_omega_c4/figures/mae_omega/mae_omega.pdf": "syn_mae_omega_c4.pdf",
 	"fixed_omega_c8/figures/mae_omega/mae_omega.pdf": "syn_mae_omega_c8.pdf",
-	# "fixed_omega_c12/figures/mae_omega/mae_omega.pdf": "syn_mae_omega_c12.pdf",
-	# "fixed_omega_c16/figures/mae_omega/mae_omega.pdf": "syn_mae_omega_c16.pdf",
 	"changing_omega/figures/ae_time_omega/exp_6.pdf": "syn_ae_time_omega.pdf",
 	"changing_omega/figures/cae_time_omega/exp_6.pdf": "syn_cae_time_omega.pdf",
 	"interference/figures/cae_time_omega/exp_1.pdf": "syn_interference.pdf",
-	"chaos_to_order/figures/cae_time_omega/exp_1.pdf": "syn_chaos_to_order.pdf",
-	"chaos_to_order/figures/cae_time_omega/exp_1.pdf": "syn_chaos_to_order.pdf",
+	"chaos_to_order/figures/cae_time_omega/exp_1.pdf": "syn_chaos_to_order.pdf"
 }
 for fig_file_org_name, fig_file_new_name in fig_file_names.items():
 	fig_paths[os.path.join(fig_dir_path, fig_file_org_name)] = os.path.join(selected_figs_dir_path, fig_file_new_name)

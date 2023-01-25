@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 
 import numpy as np
-from pbnm.generator import Multinomial
+from pearl.generator import Multinomial
 from tqdm import tqdm
 
 
@@ -124,28 +124,7 @@ with tqdm(
 				"name": ""
 			},
 			"algorithms_to_run": algorithms_to_run,
-			"parameters": {
-				"slwe_e": {
-					"lambda": batch_config["parameters"]["slwe_e"]["lambda"]
-				},
-				"slwe_t": {
-					"lambda": batch_config["parameters"]["slwe_t"]["lambda"]
-				},
-				"slwe_p_a": {
-					"eta_min": batch_config["parameters"]["slwe_p_a"]["eta"]["min"],
-					"eta_max": batch_config["parameters"]["slwe_p_a"]["eta"]["max"],
-					"rho_eta_mapping": batch_config["parameters"]["slwe_p_a"]["rho_eta_mapping"],
-					"k": batch_config["parameters"]["slwe_p_a"]["k"],
-					"L": batch_config["parameters"]["slwe_p_a"]["L"]
-				},
-				"slwe_p_e": {
-					"eta_min": batch_config["parameters"]["slwe_p_e"]["eta"]["min"],
-					"eta_max": batch_config["parameters"]["slwe_p_e"]["eta"]["max"],
-					"rho_eta_mapping": batch_config["parameters"]["slwe_p_e"]["rho_eta_mapping"],
-					"k": batch_config["parameters"]["slwe_p_e"]["k"],
-					"L": batch_config["parameters"]["slwe_p_e"]["L"]
-				}
-			},
+			"parameters": {},
 			"sequence_info": {
 				"alphabet_cardinality": alp_car,
 				"p_drift": {},
@@ -153,6 +132,30 @@ with tqdm(
 			},
 			"visualization": batch_config["visualization"]
 		}
+		if "slwe_e" in algorithms_to_run:
+			current_experiment["parameters"]["slwe_e"] = {
+				"lambda": batch_config["parameters"]["slwe_e"]["lambda"]
+			}
+		if "slwe_t" in algorithms_to_run:
+			current_experiment["parameters"]["slwe_t"] = {
+				"lambda": batch_config["parameters"]["slwe_t"]["lambda"]
+			}
+		if "pearl_a" in algorithms_to_run:
+			current_experiment["parameters"]["pearl_a"] = {
+				"eta_min": batch_config["parameters"]["pearl_a"]["eta"]["min"],
+				"eta_max": batch_config["parameters"]["pearl_a"]["eta"]["max"],
+				"rho_eta_mapping": batch_config["parameters"]["pearl_a"]["rho_eta_mapping"],
+				"k": batch_config["parameters"]["pearl_a"]["k"],
+				"L": batch_config["parameters"]["pearl_a"]["L"]
+			}
+		if "pearl_e" in algorithms_to_run:
+			current_experiment["parameters"]["pearl_e"] = {
+				"eta_min": batch_config["parameters"]["pearl_e"]["eta"]["min"],
+				"eta_max": batch_config["parameters"]["pearl_e"]["eta"]["max"],
+				"rho_eta_mapping": batch_config["parameters"]["pearl_e"]["rho_eta_mapping"],
+				"k": batch_config["parameters"]["pearl_e"]["k"],
+				"L": batch_config["parameters"]["pearl_e"]["L"]
+			}
 
 		if exp_type == "changing_omega":
 			if n_drift_type == "sudden":
