@@ -27,7 +27,7 @@ def run_experiment(experiment_file):
 
 	# read parameters
 	sequence = current_experiment["sequence"]["discrete_noisy"]
-	alp_car = current_experiment["preprocessing_info"]["clustering_result"]["number_of_clusters"]
+	alp_car = current_experiment["preprocessing"]["clustering_result"]["number_of_clusters"]
 	algorithms_to_run = current_experiment["algorithms_to_run"]
 
 	# slwe_e

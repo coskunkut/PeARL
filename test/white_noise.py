@@ -63,17 +63,17 @@ print("theoretical - empirical: {}".format(avg_expected_rho - np.mean(rho_ms.mea
 
 # build propery dict for target documents
 target_doc_props = {
-	"paper": {
-		"textwidth": "default",
+	"pat_reg": {
+		"textwidth": "pat_reg_dc",
 		"fr": 1,
-		"ar": 2.25,
-		"tex_config": "full"
+		"ar": 1.5,
+		"config": "latex"
 	}
 }
 
 # visualization
-target_doc = "paper"
-plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+target_doc = "pat_reg"
+plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["config"]])
 fig, ax = plt.subplots(
 	nrows = 1,
 	ncols = 1,
@@ -86,7 +86,7 @@ fig, ax = plt.subplots(
 fig.set_tight_layout(True)
 ax.plot(
 	[np.mean(rho) for rho in rho_history],
-	label = "average persistence",
+	label = "avg. persistence",
 	color = "black",
 	alpha = 0.9,
 	linewidth = 0.5,
@@ -95,7 +95,7 @@ ax.plot(
 )
 ax.plot(
 	rho_sample_mean,
-	label = "average persistence (sample mean)",
+	label = "avg. persistence (sample mean)",
 	color = "black",
 	alpha = 0.9,
 	linewidth = 1,
@@ -109,5 +109,6 @@ ax.set_ylabel("Persistence")
 ax.grid(linestyle="dashed", alpha=0.5)
 ax.legend(loc="lower right")
 figure_address = "{0}/white_noise_rho.{1}".format(figure_folder, "pdf")
+print(figure_address)
 fig.savefig(figure_address, bbox_inches="tight", pad_inches=0.05)
 # plt.show()

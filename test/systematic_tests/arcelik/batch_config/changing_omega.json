@@ -1,0 +1,78 @@
+{
+	"exp_type": "changing_omega",
+	"data": {
+		"motor_ids": [
+			[1, 363],
+			[2, 364],
+			[3, 365],
+			[4, 366],
+			[5, 367],
+			[6, 370],
+			[7, 373],
+			[8, 375],
+			[9, 376],
+			[10, 378],
+			[11, 379],
+			[12, 380],
+			[13, 381],
+			[14, 382],
+			[15, 383]
+		],
+		"steady_state_time": [5, 5.05],
+		"feature": "filename_current"
+	},
+	"preprocessing": {
+		"decomposition": {
+			"fragment_length": 10
+		},
+		"clustering": {
+			"algorithm": "bkmeans",
+			"parameters": {
+				"n_clusters": 8
+			}
+		},
+		"noise": {
+			"injection_type": "add",
+			"noise_drift": {
+				"sudden": {
+					"frequency": {
+						"d": 1250
+					},
+					"severity": {
+						"min": 0.1,
+						"max": 0.5
+					}
+				}
+			}
+		}
+	},
+	"algorithms_to_run": ["slwe_e", "slwe_t", "slwe_p_a", "slwe_p_e"],
+	"parameters": {
+		"experiment": {
+			"number_of_runs": 50
+		},
+		"slwe_e": {
+			"lambda": 0.9
+		},
+		"slwe_t": {
+			"lambda": 0.99
+		},
+		"slwe_p_a": {
+			"eta_min": 0.01,
+			"eta_max": 0.1,
+			"rho_eta_mapping": "avg_linear",
+			"k": 50,
+			"L": 100
+		},
+		"slwe_p_e": {
+			"eta_min": 0.01,
+			"eta_max": 0.1,
+			"rho_eta_mapping": "event_linear",
+			"k": 50,
+			"L": 100
+		}
+	},
+	"visualization": {
+		"plots": ["ae_time_omega", "cae_time_omega"]
+	}
+}

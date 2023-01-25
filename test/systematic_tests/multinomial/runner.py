@@ -80,6 +80,7 @@ def run_experiment(experiment_file):
 		slwe_p_e_ins.process_sequence(sequence, progress=False)
 		current_experiment["results"]["slwe_p_e"] = {}
 		current_experiment["results"]["slwe_p_e"]["estimates"] = slwe_p_e_ins.estimates
+		current_experiment["results"]["slwe_p_e"]["rho"] = slwe_p_e_ins.rho
 		current_experiment["results"]["slwe_p_e"]["token_index_map"] = slwe_p_e_ins.token_index_map
 
 	# append results to experiment file

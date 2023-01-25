@@ -11,11 +11,11 @@ figure_folder = os.path.join(root_folder, "test", "figures")
 
 # build propery dict for target documents
 target_doc_props = {}
-target_doc_props["default"] = {}
-target_doc_props["default"]["textwidth"] = "default"
-target_doc_props["default"]["fr"] = 1
-target_doc_props["default"]["ar"] = 2.25
-target_doc_props["default"]["tex_config"] = "full"
+target_doc_props["pat_reg"] = {}
+target_doc_props["pat_reg"]["textwidth"] = "pat_reg_dc"
+target_doc_props["pat_reg"]["fr"] = 1
+target_doc_props["pat_reg"]["ar"] = 1.5
+target_doc_props["pat_reg"]["config"] = "latex"
 
 def persistence(l, L, k):
 	return (np.power(k, np.divide(l, L)) - 1) / (k - 1)
@@ -32,7 +32,7 @@ for index, sublist in enumerate(kL):
 	for target_doc in target_doc_props.keys():
 
 		# matplotlib config
-		plt.rcParams.update(plot_tools.tex_config[target_doc_props[target_doc]["tex_config"]])
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["config"]])
 
 		# different line styles for each curve
 		linestyle_cycler = cycler("linestyle", ["solid", "dashed", "dotted", "dashdot"])
@@ -70,5 +70,6 @@ for index, sublist in enumerate(kL):
 		ax.legend(loc="upper left")
 
 		figure_address = "{0}/rho_{1}.{2}".format(figure_folder, ["k", "L"][index], "pdf")
+		print(figure_address)
 		fig.savefig(figure_address, bbox_inches="tight", pad_inches=0.05)
 		# plt.show()
