@@ -57,6 +57,9 @@ for plot_type in plots:
 		remove_existing=True
 	)
 
+	slwe_e_lambda = 0.9
+	slwe_t_lambda = 0.99
+
 	if plot_type == "mae_omega":
 		target_doc_props = {
 			"vanilla_paper": {
@@ -72,8 +75,6 @@ for plot_type in plots:
 		raw_table = pd.read_csv(result_table_path, sep=",", index_col=False)
 		noise_rates = raw_table["noise_rate"].values
 
-		slwe_e_lambda = 0.9
-		slwe_t_lambda = 0.99
 		slwe_e_mae_list = raw_table["SLWE (E)"].values
 		slwe_t_mae_list = raw_table["SLWE (T)"].values
 		slwe_p_a_mae_list = raw_table["SLWE-PA"].values
@@ -94,8 +95,8 @@ for plot_type in plots:
 		ax.plot(
 			noise_rates,
 			slwe_p_a_mae_list,
-			label = "SLWE-PA",
-			color = "black",
+			label = "PeARL with AP2LR",
+			color = "steelblue",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -104,8 +105,8 @@ for plot_type in plots:
 		ax.plot(
 			noise_rates,
 			slwe_p_e_mae_list,
-			label = "SLWE-PE",
-			color = "maroon",
+			label = "PeARL with EP2LR",
+			color = "seagreen",
 			alpha = 0.9,
 			linewidth = 1,
 			linestyle = "solid",
@@ -150,12 +151,12 @@ for plot_type in plots:
 		)
 		plt.close()
 
-	elif plot_type == "mae_time_omega":
+	elif plot_type == "ae_time_omega":
 		target_doc_props = {
 			"vanilla_paper": {
 				"textwidth": "vanilla_paper",
-				"fr": 1,
-				"ar": 2.5,
+				"fr": 0.5,
+				"ar": 1.25,
 				"tex_config": "latex"
 			}
 		}
@@ -198,48 +199,49 @@ for plot_type in plots:
 			)
 			
 			ax1.plot(
-				current_experiment["results"]["slwe_e"]["ae"],
-				label = "SLWE (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_e"]["mae"]),
+				current_experiment["results"]["slwe_p_e"]["ae"],
+				label = "PeARL with EP2LR",
+				# label = "PeARL",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 0.5,
+				linestyle = "solid",
+				zorder = 7
+			)
+			ax1.plot(
+				current_experiment["results"]["slwe_t"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
 				color = "black",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
-				zorder = 10
+				zorder = 6
 			)
 			ax1.plot(
-				current_experiment["results"]["slwe_t"]["ae"],
-				label = "SLWE (T) (MAE: {:.2f})".format(current_experiment["results"]["slwe_t"]["mae"]),
-				color = "green",
+				current_experiment["results"]["slwe_e"]["ae"],
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "darkgray",
 				alpha = 0.9,
 				linewidth = 0.5,
 				linestyle = "solid",
-				zorder = 10
-			)
-			ax1.plot(
-				current_experiment["results"]["slwe_p_e"]["ae"],
-				label = "SLWE-P (E) (MAE: {:.2f})".format(current_experiment["results"]["slwe_p_e"]["mae"]),
-				color = "blue",
-				alpha = 0.9,
-				linewidth = 0.5,
-				linestyle = "solid",
-				zorder = 10
+				zorder = 5
 			)
 
-			p_change_points = []
+			p_change_points = [0]
 			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
 			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
 			for regime_count in range(p_drift_n):
 				change_point = (regime_count+1) * p_drift_d
 				p_change_points.append(change_point)
-				ax1.axvline(
-					x = change_point,
-					# label = "$P$ Change Point",
-					color = "black",
-					alpha = 0.9,
-					linewidth = 0.5,
-					linestyle = "dashed",
-					zorder = 10
-				)
+				# ax1.axvline(
+				# 	x = change_point,
+				# 	# label = "$P$ Change Point",
+				# 	color = "black",
+				# 	alpha = 0.5,
+				# 	linewidth = 0.5,
+				# 	linestyle = "dashed",
+				# 	zorder = 10
+				# )
 			ax1.set_xticks(p_change_points)
 
 			ax1.set_xlabel("Observation Count")
@@ -250,8 +252,130 @@ for plot_type in plots:
 			ax2.set_ylim(0, 1)
 
 			ax1.grid(linestyle="dashed", alpha=0.5)
-			ax1.legend(loc="upper left")
-			ax2.legend(loc="upper right")
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
+
+			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
+			fig.savefig(
+				"{}/{}.{}".format(current_figures_folder_path, fig_name, "pdf"),
+				bbox_inches = "tight",
+				pad_inches = 0.05
+			)
+			plt.close()
+
+	elif plot_type == "cae_time_omega":
+		target_doc_props = {
+			"vanilla_paper": {
+				"textwidth": "vanilla_paper",
+				"fr": 0.5,
+				"ar": 1.25,
+				"tex_config": "latex"
+			}
+		}
+		target_doc = "vanilla_paper"
+		plt.rcParams.update(plot_tools.config[target_doc_props[target_doc]["tex_config"]])
+
+		for experiment_file in experiment_files:
+
+			# read experiment file as JSON
+			experiment_file_path = "{}/{}".format(experiment_files_folder_path, experiment_file)
+			with open(experiment_file_path) as current_experiment_file:
+				current_experiment = json.load(current_experiment_file)
+
+			# generate figure for current experiment (estimates)
+			fig, ax1 = plt.subplots(
+				nrows = 1,
+				ncols = 1,
+				figsize = plot_tools.set_size(
+					width = target_doc_props[target_doc]["textwidth"],
+					aspect_ratio = target_doc_props[target_doc]["ar"],
+					fraction = target_doc_props[target_doc]["fr"]
+				)
+			)
+			fig.set_tight_layout(True)
+
+			ax2 = ax1.twinx()
+
+			omega_all = []
+			for start_end_str, omega in current_experiment["sequence_info"]["noise"]["noise_regimes"].items():
+				start, end = [int(t) for t in start_end_str.split("_")]
+				omega_all.extend(np.repeat(omega, end-start).tolist())
+
+			ax2.plot(
+				omega_all,
+				label = "$\omega$",
+				color = "maroon",
+				alpha = 0.9,
+				linewidth = 1,
+				linestyle = "solid",
+				zorder = 10
+			)
+
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_p_e"]["ae"]),
+				label = "PeARL with EP2LR",
+				# label = "PeARL",
+				color = "seagreen",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "solid",
+				zorder = 7
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_t"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_t_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dotted",
+				zorder = 6
+			)
+			ax1.plot(
+				np.cumsum(current_experiment["results"]["slwe_e"]["ae"]),
+				label = "SLWE ($\eta={:.2f}$)".format(1-slwe_e_lambda),
+				color = "black",
+				alpha = 0.9,
+				linewidth = 1.0,
+				linestyle = "dashed",
+				zorder = 5
+			)
+			
+			p_change_points = [0]
+			p_drift_n = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["n"]
+			p_drift_d = current_experiment["sequence_info"]["p_drift"]["params"]["frequency"]["d"]
+			for regime_count in range(p_drift_n):
+				change_point = (regime_count+1) * p_drift_d
+				p_change_points.append(change_point)
+				# ax1.axvline(
+				# 	x = change_point,
+				# 	# label = "$P$ Change Point",
+				# 	color = "black",
+				# 	alpha = 0.9,
+				# 	linewidth = 0.5,
+				# 	linestyle = "dashed",
+				# 	zorder = 10
+				# )
+			ax1.set_xticks(p_change_points)
+
+			ax1.set_xlabel("Observation Count")
+			ax1.set_ylabel("CAE")
+			ax2.set_ylabel("Noise Rate ($\omega$)")
+
+			ax1.set_xlim(0, p_drift_n * p_drift_d)
+			ax2.set_ylim(0, 1)
+
+			ax1.grid(linestyle="dashed", alpha=0.5)
+
+			ax1.legend(loc="upper left").set_zorder(100)
+			ax2.legend(loc="upper right").set_zorder(100)
+
+			# these are for chaos to order scenario
+			# ax1.legend(loc="lower left").set_zorder(100)
+			# ax2.legend(loc="upper left").set_zorder(100)
+
+			ax1.set_zorder(2)
+			ax2.set_zorder(1)
+			ax1.patch.set_visible(False)
 
 			fig_name = "{}".format(current_experiment["experiment_info"]["name"])
 			fig.savefig(

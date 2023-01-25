@@ -1,0 +1,79 @@
+{
+    "sequences": [
+        "all"
+    ],
+    "preprocessing": {
+        "clustering": {
+            "algorithm": "bkmeans",
+            "parameters": {
+                "n_clusters": {
+                    "HASC1001": 4,
+                    "HASC1002": 5,
+                    "HASC1003": 4,
+                    "HASC1004": 6,
+                    "HASC1005": 6,
+                    "HASC1006": 8,
+                    "HASC1007": 7,
+                    "HASC1008": 5,
+                    "HASC1009": 4,
+                    "HASC1010": 4,
+                    "HASC1011": 10,
+                    "HASC1012": 8,
+                    "HASC1013": 4,
+                    "HASC1014": 5,
+                    "HASC1015": 5,
+                    "HASC1016": 4,
+                    "HASC1017": 5,
+                    "HASC1018": 4
+                }
+            }
+        },
+        "noise_injection": {
+            "noise_rate": [
+                0.00,
+                0.05,
+                0.10,
+                0.15,
+                0.20,
+                0.25,
+                0.30,
+                0.35,
+                0.40,
+                0.45,
+                0.50,
+                0.55,
+                0.60,
+                0.65,
+                0.70,
+                0.75,
+                0.80,
+                0.85,
+                0.90,
+                0.95,
+                1.00
+            ]
+        }
+    },
+    "algorithms_to_run": [
+        "slwe_e",
+        "slwe_t",
+        "slwe_p"
+    ],
+    "parameters": {
+        "experiment": {
+            "number_of_runs": 2
+        },
+        "slwe_e": {
+            "lambda": [0.9]
+        },
+        "slwe_t": {
+            "lambda": [0.99]
+        },
+        "slwe_p": {
+            "eta_min": [0.01],
+            "eta_max": [0.1],
+            "k": [15],
+            "L": [15]
+        }
+    }
+}

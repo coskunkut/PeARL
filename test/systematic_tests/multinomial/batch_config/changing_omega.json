@@ -5,8 +5,8 @@
 		"p_drift": {
 			"sudden": {
 				"frequency": {
-					"n": 5,
-					"d": 600
+					"n": 6,
+					"d": 400
 				},
 				"severity": {
 					"min": 0.4,
@@ -19,11 +19,11 @@
 			"noise_drift": {
 				"sudden": {
 					"frequency": {
-						"n": 10,
+						"n": 8,
 						"d": 300
 					},
 					"severity": {
-						"min": 0,
+						"min": 0.1,
 						"max": 0.5
 					}
 				}
@@ -61,6 +61,6 @@
 		}
 	},
 	"visualization": {
-		"plots": ["mae_time_omega"]
+		"plots": ["ae_time_omega", "cae_time_omega"]
 	}
 }

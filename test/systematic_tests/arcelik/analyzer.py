@@ -33,16 +33,27 @@ sample_experiment_file_path = "{}/{}".format(experiment_files_folder_path, exper
 with open(sample_experiment_file_path) as sample_experiment_file:
 	sample_experiment = json.load(sample_experiment_file)
 	algorithms_to_run = sample_experiment["algorithms_to_run"]
+	exp_type = sample_experiment["experiment_info"]["type"]
 
 # prepare column names of the log file
 fieldnames = [
-		# "experiment_type",
+		"exp_type",
+		"exp_seed",
+		"exp_name",
 		"sequence_id",
-		"seed",
-		"experiment_name",
-		"alp_car",
-		"noise_rate",
+		"alp_car"
 ]
+
+# exp type dependent field names
+if exp_type == "fixed_omega":
+	fieldnames.extend([
+		"noise_rate"
+	])
+elif exp_type == "changing_omega":
+	fieldnames.extend([
+		"noise_drift_params"
+	])
+
 if "slwe_e" in algorithms_to_run:
 	fieldnames.extend([
 		"slwe_e_lambda",
@@ -93,18 +104,31 @@ for experiment_file in tqdm(
 	experiment_file_count += 1
 
 	# get sequence info
-	alp_car = current_experiment["preprocessing_info"]["clustering_result"]["number_of_clusters"]
-	noise_rate = current_experiment["preprocessing_info"]["noise_injection"]["noise_rate"]
-	
-	# build result dictionary for current run
-	run_result_dict = {}
-	# run_result_dict["experiment_type"] = current_experiment["experiment_info"]["type"]
-	run_result_dict["seed"] = current_experiment["experiment_info"]["seed"]
-	run_result_dict["sequence_id"] = current_experiment["experiment_info"]["sequence_id"]
-	run_result_dict["experiment_name"] = current_experiment["experiment_info"]["name"]
-	run_result_dict["alp_car"] = alp_car
-	run_result_dict["noise_rate"] = noise_rate
+	alp_car = current_experiment["preprocessing"]["clustering_result"]["number_of_clusters"]
 
+	if exp_type == "changing_omega":
+		n_drift_type = current_experiment["preprocessing"]["noise"]["drift_type"]
+		if n_drift_type == "sudden":
+			n_drift_params = "{}/{}/{}".format(
+				current_experiment["preprocessing"]["noise"]["drift_params"]["frequency"]["d"],
+				current_experiment["preprocessing"]["noise"]["drift_params"]["severity"]["min"],
+				current_experiment["preprocessing"]["noise"]["drift_params"]["severity"]["max"]
+			)
+
+	# build result dictionary for current run
+	run_result_dict = {
+		"exp_type": current_experiment["experiment_info"]["type"],
+		"exp_seed": current_experiment["experiment_info"]["seed"],
+		"exp_name": current_experiment["experiment_info"]["name"],
+		"sequence_id": current_experiment["experiment_info"]["sequence_id"],
+		"alp_car": current_experiment["preprocessing"]["clustering_config"]["parameters"]["n_clusters"]
+	}
+
+	if exp_type == "fixed_omega":
+		run_result_dict["noise_rate"] = current_experiment["preprocessing"]["noise"]["noise_rate"]
+	elif exp_type == "changing_omega":
+		run_result_dict["noise_drift_params"] = n_drift_params
+	
 	sequence_length = len(current_experiment["sequence"]["discrete_clean"])
 	regime_count = len(current_experiment["sequence"]["parameters"])
 	regime_length = int(sequence_length / regime_count)
@@ -121,8 +145,11 @@ for experiment_file in tqdm(
 		slwe_e_estimates = current_experiment["results"]["slwe_e"]["estimates"]
 		slwe_e_token_index_map = current_experiment["results"]["slwe_e"]["token_index_map"]
 		slwe_e_aligned_p_sequence = align_matrix(p_sequence, slwe_e_token_index_map)
+		slwe_e_abs_diff = np.abs(np.subtract(slwe_e_aligned_p_sequence, slwe_e_estimates))
+		slwe_e_abs_error = np.mean(slwe_e_abs_diff, axis=1)
 		slwe_e_mae = metrics.mean_absolute_error(slwe_e_aligned_p_sequence, slwe_e_estimates)
 		run_result_dict["slwe_e_mae"] = slwe_e_mae
+		current_experiment["results"]["slwe_e"]["ae"] = slwe_e_abs_error.tolist()
 		current_experiment["results"]["slwe_e"]["mae"] = slwe_e_mae
 
 	# slwe_t
@@ -131,8 +158,11 @@ for experiment_file in tqdm(
 		slwe_t_estimates = current_experiment["results"]["slwe_t"]["estimates"]
 		slwe_t_token_index_map = current_experiment["results"]["slwe_t"]["token_index_map"]
 		slwe_t_aligned_p_sequence = align_matrix(p_sequence, slwe_t_token_index_map)
+		slwe_t_abs_diff = np.abs(np.subtract(slwe_t_aligned_p_sequence, slwe_t_estimates))
+		slwe_t_abs_error = np.mean(slwe_t_abs_diff, axis=1)
 		slwe_t_mae = metrics.mean_absolute_error(slwe_t_aligned_p_sequence, slwe_t_estimates)
 		run_result_dict["slwe_t_mae"] = slwe_t_mae
+		current_experiment["results"]["slwe_t"]["ae"] = slwe_t_abs_error.tolist()
 		current_experiment["results"]["slwe_t"]["mae"] = slwe_t_mae
 
 	# slwe_p_a
@@ -145,8 +175,11 @@ for experiment_file in tqdm(
 		slwe_p_a_estimates = current_experiment["results"]["slwe_p_a"]["estimates"]
 		slwe_p_a_token_index_map = current_experiment["results"]["slwe_p_a"]["token_index_map"]
 		slwe_p_a_aligned_p_sequence = align_matrix(p_sequence, slwe_p_a_token_index_map)
+		slwe_p_a_abs_diff = np.abs(np.subtract(slwe_p_a_aligned_p_sequence, slwe_p_a_estimates))
+		slwe_p_a_abs_error = np.mean(slwe_p_a_abs_diff, axis=1)
 		slwe_p_a_mae = metrics.mean_absolute_error(slwe_p_a_aligned_p_sequence, slwe_p_a_estimates)
 		run_result_dict["slwe_p_a_mae"] = slwe_p_a_mae
+		current_experiment["results"]["slwe_p_a"]["ae"] = slwe_p_a_abs_error.tolist()
 		current_experiment["results"]["slwe_p_a"]["mae"] = slwe_p_a_mae
 		
 	# slwe_p_e
@@ -159,8 +192,11 @@ for experiment_file in tqdm(
 		slwe_p_e_estimates = current_experiment["results"]["slwe_p_e"]["estimates"]
 		slwe_p_e_token_index_map = current_experiment["results"]["slwe_p_e"]["token_index_map"]
 		slwe_p_e_aligned_p_sequence = align_matrix(p_sequence, slwe_p_e_token_index_map)
+		slwe_p_e_abs_diff = np.abs(np.subtract(slwe_p_e_aligned_p_sequence, slwe_p_e_estimates))
+		slwe_p_e_abs_error = np.mean(slwe_p_e_abs_diff, axis=1)
 		slwe_p_e_mae = metrics.mean_absolute_error(slwe_p_e_aligned_p_sequence, slwe_p_e_estimates)
 		run_result_dict["slwe_p_e_mae"] = slwe_p_e_mae
+		current_experiment["results"]["slwe_p_e"]["ae"] = slwe_p_e_abs_error.tolist()
 		current_experiment["results"]["slwe_p_e"]["mae"] = slwe_p_e_mae
 	
 	# append results of current run to csv file
