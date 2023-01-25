@@ -409,6 +409,7 @@ test/**/figures/
 
 # config
 .vscode/
+.idea/
 
 # data
 data/
